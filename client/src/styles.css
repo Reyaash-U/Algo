@@ -1,0 +1,46 @@
+/* Minimal base styles so the scaffold is legible. Real visual design is
+   Frontend Dev's call — this file just keeps the layout usable. */
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+.av-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+.av-navbar__brand { font-weight: 700; text-decoration: none; color: #111; }
+.av-navbar__links { display: flex; gap: 16px; }
+.av-navbar__links a { text-decoration: none; color: #444; }
+.av-navbar__auth { display: flex; align-items: center; gap: 10px; }
+
+.av-main { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+
+.av-form-error { color: #b91c1c; }
+
+.av-empty-state { padding: 40px 0; text-align: center; color: #666; }
+.av-empty-state__title { font-weight: 600; margin-bottom: 4px; }
+
+.av-toast-stack {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.av-toast {
+  padding: 10px 16px; border-radius: 6px; background: #333; color: #fff;
+  font-size: 14px;
+}
+.av-toast--error { background: #b91c1c; }
+
+.av-auth-form { display: flex; flex-direction: column; gap: 12px; max-width: 320px; }
+.av-auth-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.av-auth-form input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+.av-route-loading { padding: 40px; text-align: center; color: #666; }

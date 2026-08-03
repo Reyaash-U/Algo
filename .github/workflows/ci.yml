@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — Postgres + Prisma + SM-2 unit tests
+    runs-on: ubuntu-latest
+
+    # Ephemeral Postgres for the duration of the job — gives this pipeline a
+    # real database to migrate against, not just a syntax check.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: algovault_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/algovault_ci
+      JWT_ACCESS_SECRET: ci_access_secret
+      JWT_REFRESH_SECRET: ci_refresh_secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install shared contract
+        run: npm install --prefix shared --no-audit --no-fund
+
+      - name: Install server deps (runs `prisma generate` via postinstall)
+        run: npm install --prefix server --no-audit --no-fund
+
+      - name: Push schema to CI database
+        run: npm run db:push --prefix server -- --skip-generate
+
+      - name: Lint
+        run: npm run lint --prefix server
+
+      - name: Run SM-2 + unit tests
+        run: npm test --prefix server
+
+  frontend:
+    name: Frontend — lint + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install shared contract
+        run: npm install --prefix shared --no-audit --no-fund
+
+      - name: Install client deps
+        run: npm install --prefix client --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint --prefix client
+
+      - name: Build
+        run: npm run build --prefix client
+        env:
+          VITE_API_BASE_URL: http://localhost:5000/api
+          VITE_USE_MOCKS: 'true'

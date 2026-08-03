@@ -1,0 +1,203 @@
+// AlgoVault — PostgreSQL schema via Prisma.
+//
+// Design notes for anyone coming from the old Mongoose version:
+//   - Embedded arrays (Note.codeBlocks, Note.versions, Revision.history,
+//     CfStats.ratingHistory/solvedByTag) are stored as `Json` columns rather
+//     than child tables — they're always read/written as a whole with their
+//     parent, never queried independently, so a join table would add cost
+//     with no benefit. Postgres's JSONB gives us indexing later if that ever
+//     changes.
+//   - Sheet.items is the one exception: SheetItem is a real child table,
+//     because PATCH /sheets/:id/items/:itemId needs to address ONE item
+//     directly — that's a relational access pattern, not a document one.
+//   - patternTags / tags use Postgres's native String[] array type (Postgres-
+//     only; would need a join table on MySQL).
+//   - All primary keys are UUIDs (string) to match the DTO shapes in
+//     shared/contract/dto.js, which already expect `id: string`.
+//   - Soft delete via `deletedAt` (not a hard delete) — this is what makes
+//     fork lineage tombstones work: a fork's `forkOfId` can still point at a
+//     deleted note/sheet without a foreign-key violation.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── User ─────────────────────────────────────────────────────────────────
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  passwordHash         String
+  displayName          String
+  role                 String    @default("user") // ROLES.USER | ROLES.ADMIN
+  cfHandle             String?
+  streakCurrent        Int       @default(0)
+  streakLongest        Int       @default(0)
+  streakLastActiveDate DateTime?
+  refreshTokenVersion  Int       @default(0) // bump to invalidate all refresh tokens
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  notes     Note[]
+  sheets    Sheet[]
+  revisions Revision[]
+  cfStats   CfStats?
+  reports   Report[]
+
+  @@map("users")
+}
+
+// ── Problem (globally cached metadata, cache-aside) ─────────────────────
+model Problem {
+  id         String   @id @default(uuid())
+  platform   String // PLATFORMS.*
+  externalId String // LeetCode slug or CF "1234A" — cache key with platform
+  title      String
+  url        String
+  difficulty String   @default("unknown") // DIFFICULTY.*
+  tags       String[] @default([])
+  fetchedAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  notes      Note[]
+  sheetItems SheetItem[]
+
+  @@unique([platform, externalId])
+  @@map("problems")
+}
+
+// ── Note ──────────────────────────────────────────────────────────────────
+model Note {
+  id              String    @id @default(uuid())
+  ownerId         String
+  owner           User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title           String
+  contentMarkdown String    @default("")
+  codeBlocks      Json      @default("[]") // [{language, code, timeComplexity, spaceComplexity}]
+  problemId       String?
+  problem         Problem?  @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  patternTags     String[]  @default([])
+  visibility      String    @default("private") // VISIBILITY.*
+  confidence      Int       @default(3) // self-rated 1..5
+  forkOfId        String?
+  forkOf          Note?     @relation("NoteForks", fields: [forkOfId], references: [id], onDelete: SetNull)
+  forks           Note[]    @relation("NoteForks")
+  forkCount       Int       @default(0)
+  versions        Json      @default("[]") // [{title, contentMarkdown, savedAt}] — autosave safety net
+  deletedAt       DateTime? // soft delete → tombstone for fork lineage
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  revisions Revision[]
+
+  @@index([ownerId])
+  @@index([patternTags])
+  @@map("notes")
+}
+
+// ── Revision (SM-2 state) ────────────────────────────────────────────────
+model Revision {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noteId         String
+  note           Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  repetitions    Int       @default(0)
+  intervalDays   Int       @default(0)
+  easeFactor     Float     @default(2.5)
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime  @default(now()) // "due" queue reads this
+  history        Json      @default("[]") // [{rating, reviewedAt, intervalAfter, easeAfter}]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, noteId])
+  @@index([userId, nextReviewAt])
+  @@map("revisions")
+}
+
+// ── Sheet + items ─────────────────────────────────────────────────────────
+model Sheet {
+  id          String    @id @default(uuid())
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String    @default("")
+  visibility  String    @default("private")
+  targetDate  DateTime?
+  forkOfId    String?
+  forkOf      Sheet?    @relation("SheetForks", fields: [forkOfId], references: [id], onDelete: SetNull)
+  forks       Sheet[]   @relation("SheetForks")
+  forkCount   Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  items SheetItem[]
+
+  @@index([ownerId])
+  @@map("sheets")
+}
+
+model SheetItem {
+  id        String   @id @default(uuid())
+  sheetId   String
+  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  problemId String?
+  problem   Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  title     String
+  status    String   @default("todo") // SHEET_ITEM_STATUS.*
+  position  Int      @default(0) // preserves display order
+
+  @@index([sheetId])
+  @@map("sheet_items")
+}
+
+// ── CfStats ───────────────────────────────────────────────────────────────
+model CfStats {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle        String
+  currentRating Int      @default(0)
+  maxRating     Int      @default(0)
+  ratingHistory Json     @default("[]") // [{contestId, ratingAfter, at}]
+  solvedByTag   Json     @default("[]") // [{tag, solved}]
+  syncedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("cf_stats")
+}
+
+// ── Tag (curated reference list) ──────────────────────────────────────────
+model Tag {
+  name      String   @id
+  createdAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+// ── Report (reported-content queue) ──────────────────────────────────────
+model Report {
+  id          String   @id @default(uuid())
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType  String   // "note" | "sheet"
+  targetId    String
+  reason      String
+  status      String   @default("open") // "open" | "resolved" | "dismissed"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([reporterId])
+  @@map("reports")
+}
+
+

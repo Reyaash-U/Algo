@@ -1,0 +1,486 @@
+{
+  "info": {
+    "name": "AlgoVault API",
+    "description": "Updated to match real implementation as of Task 13. Response envelope is {ok:true, data, meta?} on success, {ok:false, error:{code, message, details?}} on failure.\n\nImport and set the `baseUrl` and `accessToken` collection variables. `accessToken` is auto-set by the Login request's test script.\n\nStub routes (return placeholder data):\n  - GET /cf/stats\n  - GET /notes/:id/versions\n  - GET /search\n\nAuth note: POST /auth/refresh reads the __refresh__ httpOnly cookie set by login/register — no body or header needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "accessToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"Demo Student\"\n}"
+            }
+          },
+          "description": "Required: email (valid email), password (min 8 chars), displayName (2-60 chars). Rate-limited: 20 req / 15 min. Response: { user, accessToken }. refreshToken set as httpOnly cookie."
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.ok) { pm.collectionVariables.set('accessToken', body.data.accessToken); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@algovault.dev\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "description": "Required: email, password. Rate-limited: 20 req / 15 min. Sets accessToken collection variable via test script."
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/refresh"
+          },
+          "description": "No body or Authorization header needed. Reads __refresh__ httpOnly cookie. Returns new accessToken + rotated refresh cookie."
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/auth/logout"
+          },
+          "description": "Revokes all refresh sessions for the user. Clears httpOnly cookie."
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/auth/me"
+          },
+          "description": "Returns current user. Response: { user: { id, email, displayName, role, cfHandle, createdAt } }"
+        }
+      ]
+    },
+    {
+      "name": "Notes",
+      "item": [
+        {
+          "name": "List Notes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/notes"
+          },
+          "description": "Returns paginated list of caller's notes. Query params: page, limit, visibility, patternTags. Response: { items, total, page, limit }"
+        },
+        {
+          "name": "Create Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/notes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Two Sum\",\n  \"contentMarkdown\": \"## Approach\\nHashmap, O(n).\",\n  \"codeBlocks\": [{\"language\":\"cpp\",\"code\":\"// solution\",\"timeComplexity\":\"O(n)\",\"spaceComplexity\":\"O(n)\"}],\n  \"patternTags\": [\"hashmap\"],\n  \"confidence\": 4\n}"
+            }
+          },
+          "description": "Required: title. Optional: contentMarkdown (sanitized server-side), codeBlocks (array), problemId, patternTags (array), visibility ('public'|'private'), confidence (1-5). Response: NoteDTO"
+        },
+        {
+          "name": "Get Note",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/notes/:id"
+          },
+          "description": "Returns note if caller is owner or note is public. Currently a stub."
+        },
+        {
+          "name": "Update Note (autosave)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/notes/:id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentMarkdown\": \"## Updated approach\\n...\"\n}"
+            }
+          },
+          "description": "Partial update. Owner-only. Rate-limited: 15 req / 10 s (autosave bucket). contentMarkdown is sanitized server-side. Response: updated NoteDTO"
+        },
+        {
+          "name": "Delete Note (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/notes/:id"
+          },
+          "description": "Soft-deletes the note. Owner-only. Response: deleted NoteDTO"
+        },
+        {
+          "name": "Fork Note",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/notes/:id/fork"
+          },
+          "description": "Creates a copy of the note for the caller. Works on deleted notes. Caller must have read access. Response 201: new NoteDTO with forkOf set."
+        },
+        {
+          "name": "Note Versions (stub)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/notes/:id/versions"
+          },
+          "description": "STUB — always returns { versions: [] }. Owner-only."
+        },
+        {
+          "name": "Report Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/notes/:id/report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Contains plagiarized content.\"\n}"
+            }
+          },
+          "description": "File a report on a note. Caller must have read access. Required: reason (non-empty string). Response 201: { id, reporterId, targetType, targetId, reason, status, createdAt, updatedAt }"
+        }
+      ]
+    },
+    {
+      "name": "Problems",
+      "item": [
+        {
+          "name": "Resolve Problem URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/problems/resolve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://codeforces.com/problemset/problem/4/A\"\n}"
+            }
+          },
+          "description": "Resolves and caches problem metadata. Required: url. Rate-limited: 15 req / 60 s. Response: ProblemDTO { id, platform, externalId, title, url, difficulty, tags, fetchedAt }"
+        }
+      ]
+    },
+    {
+      "name": "Revisions",
+      "item": [
+        {
+          "name": "Enroll Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/revisions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"noteId\": \"<note-id>\"\n}"
+            }
+          },
+          "description": "Enrolls a note in SM-2 spaced-repetition. Required: noteId. Response: RevisionDTO { id, userId, noteId, repetitions, intervalDays, easeFactor, lastReviewedAt, nextReviewAt }"
+        },
+        {
+          "name": "Due Today",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/revisions/due"
+          },
+          "description": "Returns revisions with nextReviewAt <= now. Response: { items: RevisionDTO[], count }"
+        },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/revisions/:id/review",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 2\n}"
+            },
+            "description": "rating: 0=Again 1=Hard 2=Good 3=Easy"
+          },
+          "description": "Applies SM-2 algorithm. Required: rating (0-3 integer). Response: updated RevisionDTO."
+        },
+        {
+          "name": "Revision Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/revisions/stats"
+          },
+          "description": "Response: { dueToday, reviewedToday, retention7d } — retention7d is the pass rate (rating >= 2) over reviews from the last 7 days, 0 if none."
+        }
+      ]
+    },
+    {
+      "name": "Sheets",
+      "item": [
+        {
+          "name": "List Sheets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/sheets"
+          },
+          "description": "All non-deleted sheets owned by caller. Response: { items: SheetDTO[], total }"
+        },
+        {
+          "name": "Create Sheet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/sheets",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Amazon SDE Sheet\",\n  \"description\": \"75 must-do problems\"\n}"
+            }
+          },
+          "description": "Required: title. Optional: description, visibility, targetDate, items[]. Response 201: SheetDTO"
+        },
+        {
+          "name": "Get Sheet",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/sheets/:id"
+          },
+          "description": "Caller must be owner or sheet is public. Response: SheetDTO { id, ownerId, title, description, visibility, targetDate, items[], forkOf, forkCount, progressPct, createdAt, updatedAt }"
+        },
+        {
+          "name": "Update Sheet",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/sheets/:id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated title\"\n}"
+            }
+          },
+          "description": "Partial update of sheet metadata. Owner-only. Response: updated SheetDTO."
+        },
+        {
+          "name": "Delete Sheet (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/sheets/:id"
+          },
+          "description": "Soft-deletes the sheet. Owner-only. Response: deleted SheetDTO."
+        },
+        {
+          "name": "Update Sheet Item Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/sheets/:id/items/:itemId",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"done\"\n}"
+            }
+          },
+          "description": "Owner-only. Optional fields: status ('todo'|'in_progress'|'done'), title, problemId, position. Response: full SheetDTO with updated item."
+        },
+        {
+          "name": "Fork Sheet",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/sheets/:id/fork"
+          },
+          "description": "Creates a copy for the caller. Caller needs read access. Response 201: new SheetDTO with forkOf set."
+        },
+        {
+          "name": "Report Sheet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/sheets/:id/report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Inappropriate content in sheet.\"\n}"
+            }
+          },
+          "description": "File a report on a sheet. Caller must have read access. Required: reason (non-empty string). Response 201: { id, reporterId, targetType, targetId, reason, status, createdAt, updatedAt }"
+        }
+      ]
+    },
+    {
+      "name": "Stats & Search",
+      "item": [
+        {
+          "name": "CF Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/cf/sync",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"handle\": \"tourist\"\n}"
+            }
+          },
+          "description": "Syncs Codeforces stats. Required: handle. Rate-limited: 15 req / 60 s. Response: CfStatsDTO { handle, currentRating, maxRating, ratingHistory, solvedByTag, syncedAt }"
+        },
+        {
+          "name": "CF Stats (stub)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/cf/stats"
+          },
+          "description": "STUB — returns mock CF stats. Real implementation pending."
+        },
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/dashboard/summary"
+          },
+          "description": "Returns dashboard aggregations: patternCounts, difficultyDistribution, streak, stalenessAlerts."
+        },
+        {
+          "name": "Search (stub)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/search?q=two+sum"
+          },
+          "description": "STUB — returns { query: '...', results: [] }. When implemented, ?q= will be the search term."
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/tags"
+          },
+          "description": "Admin-only. Response: { tags: string[] }"
+        },
+        {
+          "name": "Create Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/admin/tags",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tag\": \"segment-tree\"\n}"
+            }
+          },
+          "description": "Admin-only. Required: tag (non-empty string). Stored lowercase. Returns 409 if tag exists. Response 201: { tag: string }"
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/tags/:id"
+          },
+          "description": "Admin-only. :id is the tag NAME (not a UUID). Response: { deleted: true }"
+        },
+        {
+          "name": "List Reports",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/reports"
+          },
+          "description": "Admin-only. Returns all open reports. Response: { reports: [{ id, reporterId, reporter: {id,email,displayName}, targetType, targetId, reason, status, createdAt, updatedAt, targetDetails: {title, ownerId} }] }"
+        },
+        {
+          "name": "Resolve Report",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/admin/reports/:id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"dismissed\"\n}"
+            }
+          },
+          "description": "Admin-only. Required: status — must be exactly 'resolved' or 'dismissed'. Response: { id, reporterId, targetType, targetId, reason, status, createdAt, updatedAt }"
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          },
+          "description": "No auth required. Response: { status: 'up', ts: <epoch_ms> }"
+        }
+      ]
+    }
+  ]
+}

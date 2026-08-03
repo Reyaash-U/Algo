@@ -1,0 +1,11 @@
+{
+  "name": "@algovault/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "contract/index.js",
+  "exports": {
+    ".": "./contract/index.js",
+    "./contract": "./contract/index.js"
+  }
+}
