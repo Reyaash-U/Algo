@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { env, isDev } from './config/env.js';
 import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { ApiError } from './utils/apiError.js';
 
 export function createApp() {
   const app = express();
@@ -13,7 +14,14 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN, // whitelist the frontend origin
+      origin(origin, callback) {
+        // No Origin header (curl, server-to-server, same-origin) — allow.
+        if (!origin || env.CLIENT_ORIGINS.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(ApiError.forbidden(`Origin ${origin} not allowed by CORS`));
+        }
+      },
       credentials: true, // allow the refresh cookie
     })
   );

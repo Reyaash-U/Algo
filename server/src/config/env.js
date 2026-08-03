@@ -24,7 +24,12 @@ export const env = {
   ACCESS_TTL: process.env.ACCESS_TTL ?? '15m',
   REFRESH_TTL: process.env.REFRESH_TTL ?? '7d',
 
-  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+  // Comma-separated list of allowed frontend origins, e.g.
+  // "http://localhost:5173,https://algovault.vercel.app"
+  CLIENT_ORIGINS: (process.env.CLIENT_ORIGIN ?? 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 
   // Feature flag: when true, unimplemented endpoints return mock data.
   // Backend Dev flips this off per-feature as real services land.
