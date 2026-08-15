@@ -6,8 +6,10 @@ import { CompletionRing } from '../../components/shared/CompletionRing.jsx';
 import { SubmissionHeatmap } from '../../components/shared/SubmissionHeatmap.jsx';
 import { CodeforcesBadge } from '../../components/shared/CodeforcesBadge.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function DashboardPage() {
+  const { theme } = useTheme();
   const { data: summary, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.dashboardSummary,
     queryFn: () => api.dashboard.summary(),
@@ -29,59 +31,63 @@ export function DashboardPage() {
   const streakLongest = summary?.streak?.longest ?? 14;
 
   return (
-    <div className="av-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="av-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>📊 Analytics & Progress Dashboard</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>
+            📊 Analytics & Progress Dashboard
+          </h1>
+          <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Track problem solving streaks, Codeforces sync, and spaced repetition metrics.
           </p>
         </div>
-        <CodeforcesBadge handle="tourist" rating={1540} />
+        <div style={{ filter: theme === 'light' ? 'invert(1) hue-rotate(180deg)' : 'none' }}>
+          <CodeforcesBadge handle="tourist" rating={1540} />
+        </div>
       </div>
 
       {/* Top Metric Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
         {/* Radial Completion Ring Widget */}
-        <div className="av-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <CompletionRing streak={streakCurrent} target={10} current={7} />
+        <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <CompletionRing streak={streakCurrent} target={10} current={7} monochrome={true} theme={theme} />
         </div>
 
         {/* Quick Stats Widget */}
-        <div className="av-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 650, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Streak Record
             </span>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-warning)', margin: '8px 0' }}>
-              {streakCurrent} Days <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)', fontWeight: 400 }}>(Max: {streakLongest})</span>
+            <div style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: '12px 0' }}>
+              {streakCurrent} Days <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 400 }}>(Max: {streakLongest})</span>
             </div>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
             🔥 Keep your streak alive by solving 1 problem today!
           </div>
         </div>
 
         {/* Due Revision Action Widget */}
-        <div className="av-card av-card--glow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px', borderLeft: '4px solid var(--text-primary)' }}>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--accent-warning)', fontWeight: 700, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               ⚡ DUE REVISIONS
             </span>
-            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', margin: '8px 0' }}>
+            <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '12px 0' }}>
               3 Problems
             </div>
           </div>
-          <Link to="/revise" className="av-btn av-btn--primary" style={{ textDecoration: 'none', textAlign: 'center' }}>
+          <Link to="/revise" className="btn-mono-primary" style={{ textDecoration: 'none', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
             Start Revision Session →
           </Link>
         </div>
       </div>
 
       {/* Activity Heatmap Grid */}
-      <div className="av-card">
-        <SubmissionHeatmap />
+      <div className="mono-card" style={{ padding: '24px' }}>
+        <SubmissionHeatmap monochrome={true} theme={theme} />
       </div>
     </div>
   );

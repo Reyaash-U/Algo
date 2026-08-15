@@ -5,10 +5,12 @@ import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function SheetDetailPage() {
   const { id } = useParams();
   const toast = useToast();
+  const { theme } = useTheme();
 
   const { data: rawSheet, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.sheet(id),
@@ -46,41 +48,52 @@ export function SheetDetailPage() {
   const todoPct = 100 - solvedPct - inProgressPct;
 
   return (
-    <div className="av-sheet-detail" style={{ maxWidth: '840px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '16px' }}>
-        <Link to="/sheets" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>
+    <div className="av-sheet-detail" style={{ maxWidth: '840px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ marginBottom: '8px' }}>
+        <Link to="/sheets" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           ← Back to Sheets
         </Link>
       </div>
 
-      <div className="av-card" style={{ padding: '28px', marginBottom: '24px' }}>
-        <h1 style={{ margin: '0 0 8px', fontSize: '1.6rem', color: '#fff' }}>{sheet.title}</h1>
-        <p style={{ margin: '0 0 20px', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
+      <div className="mono-card" style={{ padding: '32px' }}>
+        <h1 className="text-mono-title" style={{ margin: '0 0 12px', fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.02em' }}>{sheet.title}</h1>
+        <p className="text-mono-desc" style={{ margin: '0 0 24px', fontSize: '0.98rem', lineHeight: 1.6 }}>
           {sheet.description}
         </p>
 
         {/* Progress Tracker Summary */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', marginBottom: '10px' }}>
-          <span style={{ color: '#fff', fontWeight: 700 }}>Overall Progress: {solvedPct}%</span>
-          <span style={{ color: 'var(--text-dim)' }}>
-            <strong style={{ color: 'var(--accent-success)' }}>{solvedCount}</strong> Solved • <strong style={{ color: 'var(--accent-warning)' }}>{inProgressCount}</strong> In Progress • {totalCount} Total
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', marginBottom: '12px' }}>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>Overall Progress: {solvedPct}%</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            <strong>{solvedCount}</strong> Solved • <strong>{inProgressCount}</strong> In Progress • {totalCount} Total
           </span>
         </div>
 
-        <div className="av-progress-bar" style={{ height: '10px' }}>
-          <div className="av-progress-bar__segment av-progress-bar__segment--solved" style={{ width: `${solvedPct}%` }} />
-          <div className="av-progress-bar__segment av-progress-bar__segment--in-progress" style={{ width: `${inProgressPct}%` }} />
-          <div className="av-progress-bar__segment av-progress-bar__segment--todo" style={{ width: `${todoPct}%` }} />
+        <div className="progress-mono" style={{ height: '10px' }}>
+          <div className="progress-mono-solved" style={{ width: `${solvedPct}%` }} />
+          <div className="progress-mono-progress" style={{ width: `${inProgressPct}%` }} />
+          <div className="progress-mono-todo" style={{ width: `${todoPct}%` }} />
         </div>
       </div>
 
       {/* Item Checklist Table / List */}
-      <div className="av-card">
-        <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', color: '#fff' }}>Problem List</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="mono-card" style={{ padding: '32px' }}>
+        <h3 className="text-mono-title" style={{ margin: '0 0 20px', fontSize: '1.25rem', fontWeight: 800 }}>Problem List</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {sheet.items.map((item) => {
-            const statusColor = item.status === 'solved' ? 'var(--accent-success)' : item.status === 'in-progress' ? 'var(--accent-warning)' : 'var(--text-dim)';
-            const diffColor = item.difficulty === 'Easy' ? 'var(--accent-success)' : item.difficulty === 'Hard' ? 'var(--accent-danger)' : 'var(--accent-warning)';
+            const statusColor = item.status === 'solved'
+              ? 'var(--text-primary)'
+              : item.status === 'in-progress'
+              ? 'var(--text-secondary)'
+              : 'var(--text-secondary)';
+
+            const statusBg = item.status === 'solved'
+              ? (theme === 'light' ? '#e4e4e7' : '#27272a')
+              : item.status === 'in-progress'
+              ? (theme === 'light' ? '#f4f4f5' : '#18181b')
+              : 'transparent';
+
+            const diffColor = theme === 'light' ? '#27272a' : '#fafafa';
 
             return (
               <div
@@ -89,27 +102,46 @@ export function SheetDetailPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '8px',
+                  padding: '16px 20px',
+                  background: theme === 'light' ? '#ffffff' : '#050505',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  transition: 'border-color 0.2s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <input
                     type="checkbox"
                     checked={item.status === 'solved'}
                     onChange={() => toast.push(`Updated status for "${item.title}"`, { type: 'success' })}
-                    style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--accent-primary)' }}
+                    style={{
+                      cursor: 'pointer',
+                      width: '18px',
+                      height: '18px',
+                      accentColor: 'var(--text-primary)',
+                    }}
                   />
-                  <span style={{ color: item.status === 'solved' ? 'var(--text-dim)' : '#fff', fontWeight: 500, textDecoration: item.status === 'solved' ? 'line-through' : 'none' }}>
+                  <span style={{
+                    color: item.status === 'solved' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    fontWeight: 600,
+                    fontSize: '0.98rem',
+                    textDecoration: item.status === 'solved' ? 'line-through' : 'none'
+                  }}>
                     {item.title}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem' }}>
-                  <span style={{ color: diffColor, fontWeight: 600 }}>{item.difficulty}</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', color: statusColor, textTransform: 'capitalize', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.82rem' }}>
+                  <span style={{ color: diffColor, fontWeight: 700, letterSpacing: '0.02em' }}>{item.difficulty}</span>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    background: statusBg,
+                    border: item.status === 'todo' ? '1px solid var(--border-color)' : 'none',
+                    color: statusColor,
+                    textTransform: 'capitalize',
+                    fontWeight: 700
+                  }}>
                     {item.status}
                   </span>
                 </div>

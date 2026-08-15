@@ -4,8 +4,10 @@ import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function SheetsPage() {
+  const { theme } = useTheme();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.sheets,
     queryFn: () => api.sheets.list(),
@@ -51,15 +53,17 @@ export function SheetsPage() {
   ];
 
   return (
-    <div className="av-sheets-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="av-sheets-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>📋 Problem Trackers & Sheets</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>
+            📋 Problem Trackers & Sheets
+          </h1>
+          <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Track progress across popular DSA sheets and custom curated problem sets.
           </p>
         </div>
-        <button className="av-btn av-btn--primary">
+        <button className="btn-mono-primary">
           + Create Custom Sheet
         </button>
       </div>
@@ -67,43 +71,43 @@ export function SheetsPage() {
       {sheets.length === 0 ? (
         <EmptyState title="No sheets yet" description="Create a new sheet to track your problem-solving progress." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
           {sheets.map((s) => {
             const solvedPct = Math.round((s.solved / s.total) * 100);
             const inProgressPct = Math.round((s.inProgress / s.total) * 100);
             const todoPct = 100 - solvedPct - inProgressPct;
 
             return (
-              <div key={s.id} className="av-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={s.id} className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
                 <div>
                   <Link
                     to={`/sheets/${s.id}`}
-                    style={{ textDecoration: 'none', color: '#fff', fontSize: '1.15rem', fontWeight: 700 }}
+                    style={{ textDecoration: 'none', color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: 800 }}
                   >
                     {s.title}
                   </Link>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '8px 0 16px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '12px 0 20px', lineHeight: 1.5 }}>
                     {s.description}
                   </p>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', marginBottom: '8px' }}>
-                    <span style={{ color: '#fff', fontWeight: 600 }}>{solvedPct}% Solved</span>
-                    <span style={{ color: 'var(--text-dim)' }}>
-                      <strong style={{ color: 'var(--accent-success)' }}>{s.solved}</strong> solved • <strong style={{ color: 'var(--accent-warning)' }}>{s.inProgress}</strong> in progress • {s.total} total
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{solvedPct}% Solved</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      <strong>{s.solved}</strong> solved • <strong>{s.inProgress}</strong> in progress • {s.total} total
                     </span>
                   </div>
 
-                  {/* Multi-segment Progress Bar */}
-                  <div className="av-progress-bar">
-                    <div className="av-progress-bar__segment av-progress-bar__segment--solved" style={{ width: `${solvedPct}%` }} title={`Solved: ${solvedPct}%`} />
-                    <div className="av-progress-bar__segment av-progress-bar__segment--in-progress" style={{ width: `${inProgressPct}%` }} title={`In Progress: ${inProgressPct}%`} />
-                    <div className="av-progress-bar__segment av-progress-bar__segment--todo" style={{ width: `${todoPct}%` }} title={`Todo: ${todoPct}%`} />
+                  {/* Multi-segment Progress Bar Override */}
+                  <div className="progress-mono" style={{ height: '8px', marginBottom: '20px' }}>
+                    <div className="progress-mono-solved" style={{ width: `${solvedPct}%` }} title={`Solved: ${solvedPct}%`} />
+                    <div className="progress-mono-progress" style={{ width: `${inProgressPct}%` }} title={`In Progress: ${inProgressPct}%`} />
+                    <div className="progress-mono-todo" style={{ width: `${todoPct}%` }} title={`Todo: ${todoPct}%`} />
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                    <Link to={`/sheets/${s.id}`} className="av-btn av-btn--secondary" style={{ padding: '6px 12px', fontSize: '0.8rem', textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Link to={`/sheets/${s.id}`} className="btn-mono-secondary" style={{ padding: '6px 14px', fontSize: '0.8rem', textDecoration: 'none' }}>
                       Open Tracker →
                     </Link>
                   </div>

@@ -308,4 +308,157 @@ body {
   color: #e9d5ff;
 }
 
+/* ==========================================================================
+   Monochrome (Black & White) Design System for Dashboard & Sheets
+   ========================================================================== */
+
+/* Dark Mode Theme Tokens - Inspired by the Dark website */
+.av-theme-dark {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --text-primary: #ffffff;
+  --text-secondary: #8a8a93;
+  --border-color: #1a1a1a;
+  --btn-primary-bg: #ff4f12; /* Warm orange accent from the reference image */
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #1a1a1c;
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: #2a2a2c;
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
+  --accent-glow: rgba(255, 79, 18, 0.15);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Light Mode Theme Tokens - Inverse premium style of Dark */
+.av-theme-light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f6f9;
+  --text-primary: #000000;
+  --text-secondary: #6e6e77;
+  --border-color: #e5e5eb;
+  --btn-primary-bg: #101012;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-text: #000000;
+  --btn-secondary-border: #e5e5eb;
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  --accent-glow: rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Shared components override when inside an active theme page */
+.av-theme-dark, .av-theme-light {
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: calc(100vh - 72px);
+  padding: 2.5rem 2rem;
+}
+
+.av-theme-dark .mono-card,
+.av-theme-light .mono-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.av-theme-dark .mono-card:hover,
+.av-theme-light .mono-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--text-secondary);
+  box-shadow: var(--card-shadow), 0 0 14px var(--accent-glow);
+}
+
+/* Buttons */
+.av-theme-dark .btn-mono-primary,
+.av-theme-light .btn-mono-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-bg);
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.av-theme-dark .btn-mono-primary:hover,
+.av-theme-light .btn-mono-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.av-theme-dark .btn-mono-secondary,
+.av-theme-light .btn-mono-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--btn-secondary-border);
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.av-theme-dark .btn-mono-secondary:hover,
+.av-theme-light .btn-mono-secondary:hover {
+  background-color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+/* Text elements */
+.av-theme-dark .text-mono-title,
+.av-theme-light .text-mono-title {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.av-theme-dark .text-mono-desc,
+.av-theme-light .text-mono-desc {
+  color: var(--text-secondary);
+}
+
+/* Custom Progress bar overrides */
+.av-theme-dark .progress-mono,
+.av-theme-light .progress-mono {
+  background-color: var(--border-color);
+  height: 8px;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.av-theme-dark .progress-mono-solved {
+  background-color: var(--text-primary);
+}
+.av-theme-light .progress-mono-solved {
+  background-color: #09090b;
+}
+
+.av-theme-dark .progress-mono-progress {
+  background-color: #52525b;
+}
+.av-theme-light .progress-mono-progress {
+  background-color: #d4d4d8;
+}
+
+.av-theme-dark .progress-mono-todo {
+  background-color: #27272a;
+}
+.av-theme-light .progress-mono-todo {
+  background-color: #f4f4f5;
+}
+
+
 

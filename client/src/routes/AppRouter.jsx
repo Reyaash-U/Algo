@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/shared/ProtectedRoute.jsx';
 import { Navbar } from '../components/shared/Navbar.jsx';
+import { useTheme } from '../lib/themeContext.jsx';
 
 // Feature pages — placeholders now, each feature dev fills theirs in.
 import { AuthPage } from '../features/auth/AuthPage.jsx';
@@ -13,13 +14,13 @@ import { SheetDetailPage } from '../features/sheets/SheetDetailPage.jsx';
 import { ExplorePage } from '../features/explore/ExplorePage.jsx';
 import { AdminPage } from '../features/admin/AdminPage.jsx';
 
-// Path list matches the spec 1:1:
-//   /auth  /vault  /note/:id  /revise  /dashboard  /sheets  /explore  /admin
 export function AppRouter() {
+  const { theme } = useTheme();
+
   return (
     <BrowserRouter>
       <Navbar />
-      <main className="av-main">
+      <main className={`av-main av-theme-${theme}`}>
         <Routes>
           <Route path="/" element={<Navigate to="/vault" replace />} />
           <Route path="/auth" element={<AuthPage />} />
