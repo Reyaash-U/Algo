@@ -1,9 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 
-// Minimal toast system. ToastProvider goes near the app root; call useToast()
-// anywhere to push a message. No external dep — swap for a library later if
-// the team wants richer animations.
-
 const ToastContext = createContext(null);
 let idSeq = 1;
 
@@ -19,10 +15,25 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      <div className="av-toast-stack" aria-live="polite">
-        {toasts.map((t) => (
-          <div key={t.id} className={`av-toast av-toast--${t.type}`}>{t.message}</div>
-        ))}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-2.5 z-50" aria-live="polite">
+        {toasts.map((t) => {
+          const borderClass =
+            t.type === 'error'
+              ? 'border-l-4 border-l-rose-500'
+              : t.type === 'success'
+              ? 'border-l-4 border-l-emerald-500'
+              : 'border-l-4 border-l-violet-500';
+
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl bg-slate-900/95 backdrop-blur-md border border-white/10 text-sm text-gray-100 shadow-2xl animate-slide-in ${borderClass}`}
+            >
+              <span>{t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️'}</span>
+              <span>{t.message}</span>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );
