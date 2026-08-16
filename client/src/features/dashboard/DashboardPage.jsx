@@ -70,7 +70,7 @@ export function DashboardPage() {
         </div>
 
         {/* Due Revision Action Widget */}
-        <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px', borderLeft: '4px solid var(--text-primary)' }}>
+        <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}>
           <div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               ⚡ DUE REVISIONS

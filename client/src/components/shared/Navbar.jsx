@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
+import { useState, useRef, useEffect } from 'react';
 
 const NAV_LINKS = [
   { to: '/vault', label: 'Vault' },
@@ -15,120 +16,239 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  
+  // Mobile menu visibility
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Dynamic active sliding tab tracker refs
+  const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const navContainerRef = useRef(null);
+  const activeLinkRef = useRef(null);
 
   const handleLogout = async () => {
     await logout();
+    setIsOpen(false);
     navigate('/auth');
   };
 
-  // Only show the theme toggle on Dashboard and Sheets pages (and sub-paths of sheets)
-  const showToggle = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/sheets');
+  // Re-calculate the sliding tab selector style coordinates on active link change
+  useEffect(() => {
+    if (activeLinkRef.current && navContainerRef.current) {
+      const activeRect = activeLinkRef.current.getBoundingClientRect();
+      const containerRect = navContainerRef.current.getBoundingClientRect();
+      setSliderStyle({
+        left: activeRect.left - containerRect.left,
+        width: activeRect.width,
+        opacity: 1
+      });
+    } else {
+      setSliderStyle((prev) => ({ ...prev, opacity: 0 }));
+    }
+  }, [location.pathname, isAuthenticated]);
 
   return (
-    <nav className={`flex items-center justify-between px-7 py-3.5 sticky top-0 z-50 transition-colors duration-300 ${
-      showToggle && theme === 'light'
-        ? 'bg-white border-b border-zinc-200 text-zinc-950'
-        : 'bg-slate-900/85 backdrop-blur-md border-b border-white/10 text-gray-100'
+    <div className={`sticky top-0 z-50 w-full px-4 py-3 md:px-8 transition-colors duration-300 ${
+      theme === 'light' ? 'bg-transparent' : 'bg-transparent'
     }`}>
-      <Link to="/" className={`font-bold text-lg no-underline flex items-center gap-2 tracking-tight ${
-        showToggle && theme === 'light' ? 'text-zinc-900' : 'text-gray-100'
+      {/* Floating Pill Outer Container */}
+      <nav className={`max-w-7xl mx-auto flex items-center justify-between px-6 py-2.5 rounded-full border shadow-lg transition-all duration-300 ${
+        theme === 'light'
+          ? 'bg-white/80 backdrop-blur-lg border-zinc-200 text-zinc-950 shadow-zinc-200/50'
+          : 'bg-zinc-950/80 backdrop-blur-lg border-zinc-800 text-white shadow-black/80'
       }`}>
-        <span className="w-7 h-7 bg-gradient-to-br from-violet-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-violet-500/50">
-          AV
-        </span>
-        <span>AlgoVault</span>
-      </Link>
+        
+        {/* Left branding */}
+        <Link to="/" className="flex items-center gap-2.5 font-bold text-lg no-underline tracking-tight">
+          <span className="w-8 h-8 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center font-black text-sm transition-transform duration-300 hover:rotate-12">
+            AV
+          </span>
+          <span className={theme === 'light' ? 'text-zinc-900' : 'text-white'}>AlgoVault</span>
+        </Link>
 
-      {isAuthenticated && (
-        <div className="flex gap-5">
-          {NAV_LINKS.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) =>
-                `no-underline text-sm font-medium px-3 py-1.5 rounded-md transition-all ${
-                  isActive
-                    ? showToggle && theme === 'light'
-                      ? 'text-zinc-950 bg-zinc-100 border-b-2 border-zinc-900'
-                      : 'text-white bg-white/10 border-b-2 border-violet-500'
-                    : showToggle && theme === 'light'
-                    ? 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              {l.label}
-            </NavLink>
-          ))}
-          {user?.role === 'admin' && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                `no-underline text-sm font-medium px-3 py-1.5 rounded-md transition-all ${
-                  isActive
-                    ? showToggle && theme === 'light'
-                      ? 'text-zinc-950 bg-zinc-100 border-b-2 border-zinc-900'
-                      : 'text-white bg-white/10 border-b-2 border-violet-500'
-                    : showToggle && theme === 'light'
-                    ? 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              Admin
-            </NavLink>
-          )}
-        </div>
-      )}
+        {/* Center navigation items with sliding background pill */}
+        {isAuthenticated && (
+          <div 
+            ref={navContainerRef}
+            className="hidden md:flex items-center gap-1.5 relative"
+            style={{ isolation: 'isolate' }}
+          >
+            {/* Sliding Highlight Pill */}
+            <div 
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: `${sliderStyle.left}px`,
+                width: `${sliderStyle.width}px`,
+                opacity: sliderStyle.opacity,
+                backgroundColor: theme === 'light' ? '#09090b' : '#ffffff',
+                borderRadius: '9999px',
+                zIndex: -1,
+                transition: 'left 0.35s cubic-bezier(0.25, 1, 0.5, 1), width 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease',
+              }}
+            />
 
-      <div className="flex items-center gap-3">
-        {showToggle && (
+            {NAV_LINKS.map((l) => {
+              const isActive = location.pathname.startsWith(l.to);
+              return (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  ref={isActive ? activeLinkRef : null}
+                  className="no-underline text-xs font-semibold px-4 py-2 rounded-full transition-all duration-300 cursor-pointer select-none"
+                  style={{
+                    color: isActive 
+                      ? (theme === 'light' ? '#ffffff' : '#09090b')
+                      : (theme === 'light' ? '#52525b' : '#a1a1aa'),
+                    transform: 'scale(1)',
+                  }}
+                >
+                  {l.label}
+                </NavLink>
+              );
+            })}
+            
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/admin"
+                ref={location.pathname.startsWith('/admin') ? activeLinkRef : null}
+                className="no-underline text-xs font-semibold px-4 py-2 rounded-full transition-all duration-300 cursor-pointer select-none"
+                style={{
+                  color: location.pathname.startsWith('/admin')
+                    ? (theme === 'light' ? '#ffffff' : '#09090b')
+                    : (theme === 'light' ? '#52525b' : '#a1a1aa'),
+                }}
+              >
+                Admin
+              </NavLink>
+            )}
+          </div>
+        )}
+
+        {/* Right actions and utilities */}
+        <div className="flex items-center gap-3">
+          {/* Light/Dark Toggle */}
           <button
             onClick={toggleTheme}
             aria-label="Toggle Theme"
-            className={`p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+            className={`p-2 rounded-full border transition-all duration-300 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 ${
               theme === 'light'
                 ? 'bg-zinc-100 border-zinc-200 hover:bg-zinc-200 text-zinc-900'
-                : 'bg-white/10 border-white/10 hover:bg-white/20 text-gray-200'
+                : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-white'
             }`}
           >
             {theme === 'light' ? (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
               </svg>
             ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
             )}
           </button>
-        )}
 
-        {isAuthenticated ? (
-          <>
-            <span className={`text-xs font-medium ${showToggle && theme === 'light' ? 'text-zinc-500' : 'text-gray-400'}`}>
-              👤 {user?.displayName}
-            </span>
-            <button
-              onClick={handleLogout}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-                showToggle && theme === 'light'
-                  ? 'bg-zinc-900 hover:bg-zinc-800 text-white border-zinc-900'
-                  : 'bg-white/10 hover:bg-white/20 text-gray-200 border-white/10'
-              }`}
+          {/* User Display Info & Log out button */}
+          {isAuthenticated ? (
+            <div className="hidden md:flex items-center gap-3">
+              <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                {user?.displayName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="btn-mono-secondary"
+                style={{ padding: '6px 14px', borderRadius: '9999px', fontSize: '0.75rem' }}
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/auth"
+              className="btn-mono-primary"
+              style={{ padding: '6px 16px', borderRadius: '9999px', fontSize: '0.75rem', textDecoration: 'none' }}
             >
-              Log out
+              Sign In
+            </Link>
+          )}
+
+          {/* Hamburger Mobile Menu Toggle */}
+          {isAuthenticated && (
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex md:hidden p-2 rounded-full border transition-all duration-200 outline-none"
+              style={{
+                borderColor: theme === 'light' ? '#e4e4e7' : '#27272a',
+                color: theme === 'light' ? '#09090b' : '#ffffff'
+              }}
+            >
+              {isOpen ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+              )}
             </button>
-          </>
-        ) : (
-          <Link
-            to="/auth"
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white no-underline shadow-md shadow-violet-500/30 transition-all"
-          >
-            Log in
-          </Link>
-        )}
-      </div>
-    </nav>
+          )}
+        </div>
+      </nav>
+
+      {/* Drawer menu for Mobile devices */}
+      {isOpen && isAuthenticated && (
+        <div className="md:hidden mt-3 max-w-7xl mx-auto">
+          <div className={`flex flex-col gap-2 p-4 rounded-3xl border shadow-lg transition-all duration-300 ${
+            theme === 'light'
+              ? 'bg-white border-zinc-200 text-zinc-950 shadow-zinc-200/50'
+              : 'bg-zinc-950 border-zinc-800 text-white shadow-black/80'
+          }`}>
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setIsOpen(false)}
+                className={`no-underline text-sm font-semibold px-4 py-2.5 rounded-full transition-all ${
+                  location.pathname.startsWith(l.to)
+                    ? (theme === 'light' ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-950')
+                    : (theme === 'light' ? 'hover:bg-zinc-100 text-zinc-500' : 'hover:bg-zinc-900 text-zinc-400')
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className={`no-underline text-sm font-semibold px-4 py-2.5 rounded-full transition-all ${
+                  location.pathname.startsWith('/admin')
+                    ? (theme === 'light' ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-950')
+                    : (theme === 'light' ? 'hover:bg-zinc-100 text-zinc-500' : 'hover:bg-zinc-900 text-zinc-400')
+                }`}
+              >
+                Admin
+              </Link>
+            )}
+            
+            <div className={`mt-3 pt-3 border-t flex flex-col gap-3 px-4 ${
+              theme === 'light' ? 'border-zinc-100' : 'border-zinc-800'
+            }`}>
+              <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                Logged in as {user?.displayName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="btn-mono-secondary"
+                style={{ padding: '8px 16px', borderRadius: '9999px', fontSize: '0.8rem', justifyContent: 'center' }}
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

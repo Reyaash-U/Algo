@@ -5,8 +5,10 @@ import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function VaultPage() {
+  const { theme } = useTheme();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.notes(),
     queryFn: () => api.notes.list(),
@@ -47,15 +49,15 @@ export function VaultPage() {
   ];
 
   return (
-    <div className="av-vault-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="av-vault-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>📦 My Solution Vault</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>📦 My Solution Vault</h1>
+          <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Curated DSA problem notes, intuition breakdown, and complexity notes.
           </p>
         </div>
-        <button className="av-btn av-btn--primary">
+        <button className="btn-mono-primary">
           + New Note
         </button>
       </div>
@@ -63,23 +65,23 @@ export function VaultPage() {
       {notes.length === 0 ? (
         <EmptyState title="No notes yet" description="Paste a problem link to create your first note." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
           {notes.map((n) => (
-            <div key={n.id} className="av-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={n.id} className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '200px' }}>
               <div>
                 <Link
                   to={`/note/${n.id}`}
-                  style={{ textDecoration: 'none', color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}
+                  style={{ textDecoration: 'none', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: 800 }}
                 >
                   {n.title}
                 </Link>
-                <div style={{ marginTop: '12px' }}>
+                <div style={{ marginTop: '14px' }}>
                   <PatternTags tags={n.patternTags} />
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 <span>Saved {n.createdAt}</span>
-                <Link to={`/note/${n.id}`} className="av-btn av-btn--secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', textDecoration: 'none' }}>
+                <Link to={`/note/${n.id}`} className="btn-mono-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', textDecoration: 'none' }}>
                   Open →
                 </Link>
               </div>

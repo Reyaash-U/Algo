@@ -15,6 +15,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('av-theme', theme);
+    document.documentElement.className = `av-theme-${theme}`;
   }, [theme]);
 
   const toggleTheme = () => {

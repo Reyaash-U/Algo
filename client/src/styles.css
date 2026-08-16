@@ -28,6 +28,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html.av-theme-dark body, html.av-theme-light body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  background-image: none !important;
+}
+
 /* Custom Cyber-Terminal Card & Glow Utilities */
 .av-card {
   background-color: rgba(17, 24, 39, 0.65);
@@ -97,9 +103,9 @@ body {
 .av-main {
   padding-left: 1.75rem;
   padding-right: 1.75rem;
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-  min-height: calc(100vh - 72px);
+  padding-top: 1rem;
+  padding-bottom: 2.5rem;
+  min-height: calc(100vh - 88px);
   width: 100%;
   box-sizing: border-box;
 }
@@ -413,8 +419,14 @@ body {
 
 .av-theme-dark .btn-mono-secondary:hover,
 .av-theme-light .btn-mono-secondary:hover {
-  background-color: var(--bg-primary);
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
   border-color: var(--text-primary);
+}
+
+.av-theme-dark .btn-mono-secondary:active,
+.av-theme-light .btn-mono-secondary:active {
+  transform: translateY(1px);
 }
 
 /* Text elements */

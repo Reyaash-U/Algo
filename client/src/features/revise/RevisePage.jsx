@@ -5,12 +5,14 @@ import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function RevisePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.revisionsDue,
@@ -67,15 +69,15 @@ export function RevisePage() {
   };
 
   return (
-    <div className="av-revise-page" style={{ maxWidth: '680px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="av-revise-page" style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>🧠 Spaced Repetition Queue</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>🧠 Spaced Repetition Queue</h1>
+          <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Review notes using SM-2 algorithm to lock DSA patterns into long-term memory.
           </p>
         </div>
-        <span className="av-complexity-pill av-complexity-pill--time">
+        <span className="btn-mono-secondary" style={{ pointerEvents: 'none', padding: '6px 14px', borderRadius: '20px' }}>
           {currentIndex + 1} / {items.length} Due
         </span>
       </div>
@@ -84,31 +86,31 @@ export function RevisePage() {
         <EmptyState title="Nothing due today 🎉" description="Come back tomorrow or enroll more notes from your Vault!" />
       ) : (
         <div className="av-flashcard-stack">
-          <div className="av-flashcard av-card--glow">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-warning)', letterSpacing: '0.05em' }}>
+          <div className="mono-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
                 ⚡ DUE FOR REVIEW TODAY
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {(currentCard.patternTags ?? []).map((t) => (
-                  <span key={t} className="av-pattern-tag">#{t}</span>
+                  <span key={t} className="btn-mono-secondary" style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: '4px' }}>#{t}</span>
                 ))}
               </div>
             </div>
 
-            <h2 style={{ margin: '0 0 16px', fontSize: '1.35rem', color: '#fff' }}>
+            <h2 className="text-mono-title" style={{ margin: '0 0 20px', fontSize: '1.5rem', fontWeight: 800 }}>
               {currentCard.noteTitle ?? currentCard.title}
             </h2>
 
-            <div style={{ minHeight: '140px', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-subtle)', marginBottom: '20px' }}>
+            <div style={{ minHeight: '160px', background: theme === 'light' ? '#ffffff' : '#050505', padding: '24px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
               {showAnswer ? (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: '#e5e7eb', whitespace: 'pre-wrap' }}>
+                <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '0.88rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                   {currentCard.contentMarkdown}
-                </div>
+                </pre>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '120px', gap: '12px' }}>
-                  <span style={{ fontSize: '1.8rem' }}>🔒</span>
-                  <button className="av-btn av-btn--secondary" onClick={() => setShowAnswer(true)}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', gap: '14px' }}>
+                  <span style={{ fontSize: '2rem' }}>🔒</span>
+                  <button className="btn-mono-secondary" onClick={() => setShowAnswer(true)}>
                     Show Solution & Intuition
                   </button>
                 </div>
@@ -116,26 +118,33 @@ export function RevisePage() {
             </div>
 
             {showAnswer && (
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              <div style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 650, display: 'block', marginBottom: '16px' }}>
                   Rate Recall Confidence (1 = Forgot, 5 = Mastered):
                 </span>
-                <div className="av-confidence-group">
-                  <button className="av-confidence-btn av-confidence-btn--1" onClick={() => handleRate(1)}>
-                    1 <span>Forgot</span>
-                  </button>
-                  <button className="av-confidence-btn av-confidence-btn--2" onClick={() => handleRate(2)}>
-                    2 <span>Hard</span>
-                  </button>
-                  <button className="av-confidence-btn av-confidence-btn--3" onClick={() => handleRate(3)}>
-                    3 <span>Fair</span>
-                  </button>
-                  <button className="av-confidence-btn av-confidence-btn--4" onClick={() => handleRate(4)}>
-                    4 <span>Good</span>
-                  </button>
-                  <button className="av-confidence-btn av-confidence-btn--5" onClick={() => handleRate(5)}>
-                    5 <span>Easy</span>
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                  {[
+                    { val: 1, label: 'Forgot' },
+                    { val: 2, label: 'Hard' },
+                    { val: 3, label: 'Fair' },
+                    { val: 4, label: 'Good' },
+                    { val: 5, label: 'Easy' }
+                  ].map((btn) => (
+                    <button
+                      key={btn.val}
+                      className="btn-mono-secondary"
+                      onClick={() => handleRate(btn.val)}
+                      style={{
+                        flexDirection: 'column',
+                        padding: '12px 6px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <strong style={{ fontSize: '1.1rem' }}>{btn.val}</strong>
+                      <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500, marginTop: '2px' }}>{btn.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

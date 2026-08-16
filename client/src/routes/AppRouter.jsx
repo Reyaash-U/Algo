@@ -22,7 +22,7 @@ export function AppRouter() {
       <Navbar />
       <main className={`av-main av-theme-${theme}`}>
         <Routes>
-          <Route path="/" element={<Navigate to="/vault" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<AuthPage />} />
 
           <Route element={<ProtectedRoute />}>
@@ -39,7 +39,7 @@ export function AppRouter() {
             <Route path="/admin" element={<AdminPage />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/vault" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </BrowserRouter>

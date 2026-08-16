@@ -19,15 +19,20 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => {
           const borderClass =
             t.type === 'error'
-              ? 'border-l-4 border-l-rose-500'
+              ? 'border-l-4 border-l-red-500'
               : t.type === 'success'
-              ? 'border-l-4 border-l-emerald-500'
-              : 'border-l-4 border-l-violet-500';
+              ? 'border-l-4 border-l-zinc-950 dark:border-l-white'
+              : 'border-l-4 border-l-zinc-500';
 
           return (
             <div
               key={t.id}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl bg-slate-900/95 backdrop-blur-md border border-white/10 text-sm text-gray-100 shadow-2xl animate-slide-in ${borderClass}`}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border shadow-2xl animate-slide-in ${borderClass}`}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-color)',
+              }}
             >
               <span>{t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️'}</span>
               <span>{t.message}</span>

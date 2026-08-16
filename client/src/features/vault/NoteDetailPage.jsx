@@ -8,11 +8,13 @@ import { ComplexityPills } from '../../components/shared/ComplexityPills.jsx';
 import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
+import { useTheme } from '../../lib/themeContext.jsx';
 
 export function NoteDetailPage() {
   const { id } = useParams();
   const [copied, setCopied] = useState(false);
   const toast = useToast();
+  const { theme } = useTheme();
 
   const { data: rawNote, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.note(id),
@@ -62,39 +64,55 @@ For each number \`num\` in the array, we calculate its complement \`diff = targe
   };
 
   return (
-    <div className="av-note-detail" style={{ maxWidth: '840px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '16px' }}>
-        <Link to="/vault" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>
+    <div className="av-note-detail" style={{ maxWidth: '840px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ marginBottom: '8px' }}>
+        <Link to="/vault" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           ← Back to Vault
         </Link>
       </div>
 
-      <div className="av-card" style={{ padding: '28px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="mono-card" style={{ padding: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px', marginBottom: '24px' }}>
           <div>
-            <h1 style={{ margin: '0 0 12px', fontSize: '1.6rem', color: '#fff' }}>{note.title}</h1>
+            <h1 className="text-mono-title" style={{ margin: '0 0 12px', fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.02em' }}>{note.title}</h1>
             <PatternTags tags={note.patternTags} />
           </div>
-          <ComplexityPills
-            timeComplexity={note.timeComplexity ?? 'O(N)'}
-            spaceComplexity={note.spaceComplexity ?? 'O(N)'}
-          />
+          <div style={{ filter: theme === 'light' ? 'invert(1) hue-rotate(180deg)' : 'none' }}>
+            <ComplexityPills
+              timeComplexity={note.timeComplexity ?? 'O(N)'}
+              spaceComplexity={note.spaceComplexity ?? 'O(N)'}
+            />
+          </div>
         </div>
 
         {/* Code Snippet Box with Floating Copy Button */}
-        <div className="av-code-container">
-          <div className="av-code-header">
-            <span>Solution Snippet (Python 3)</span>
-            <button className="av-copy-btn" onClick={handleCopyCode}>
+        <div style={{
+          border: '1px solid var(--border-color)',
+          borderRadius: '10px',
+          background: theme === 'light' ? '#f4f4f5' : '#050505',
+          overflow: 'hidden',
+          marginTop: '28px'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px 20px',
+            borderBottom: '1px solid var(--border-color)',
+            fontSize: '0.82rem',
+            color: 'var(--text-secondary)'
+          }}>
+            <span style={{ fontWeight: 650 }}>Solution Snippet (Python 3)</span>
+            <button className="btn-mono-secondary" onClick={handleCopyCode} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
               {copied ? '✓ Copied!' : '📋 Copy Code'}
             </button>
           </div>
-          <pre style={{ margin: 0, padding: '16px', fontFamily: 'var(--font-mono)', fontSize: '0.88rem', color: '#a7f3d0', overflowX: 'auto' }}>
+          <pre style={{ margin: 0, padding: '20px', fontFamily: 'var(--font-mono)', fontSize: '0.88rem', color: theme === 'light' ? '#09090b' : '#fafafa', overflowX: 'auto' }}>
             <code>{note.codeSnippet ?? `// Solution snippet placeholder`}</code>
           </pre>
         </div>
 
-        <div style={{ marginTop: '24px' }}>
+        <div style={{ marginTop: '32px', color: 'var(--text-primary)' }}>
           <MarkdownRenderer content={note.contentMarkdown} />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
@@ -17,16 +17,8 @@ export function SheetDetailPage() {
     queryFn: () => api.sheets.get(id),
   });
 
-  if (isLoading) {
-    return (
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <SkeletonCard />
-      </div>
-    );
-  }
-
-  // Fallback mock sheet for scaffold/demo
-  const sheet = rawSheet ?? {
+  // Provide mock fallback note for demo/scaffold
+  const sheetFallback = {
     id: id || 'sheet-1',
     title: 'Striver SDE Sheet - Top 180 DSA Questions',
     description: 'Curated 6-week placement preparation tracker covering Arrays, DP, Graphs, and System Design.',
@@ -39,9 +31,42 @@ export function SheetDetailPage() {
     ],
   };
 
-  const solvedCount = sheet.items.filter((i) => i.status === 'solved').length;
-  const inProgressCount = sheet.items.filter((i) => i.status === 'in-progress').length;
-  const totalCount = sheet.items.length;
+  const sheet = rawSheet ?? sheetFallback;
+
+  // Add local state to simulate status cycling if backend integration is stubbed
+  const [items, setItems] = useState(sheet.items);
+
+  // Sync state items when rawSheet changes/loads
+  useEffect(() => {
+    if (rawSheet?.items) {
+      setItems(rawSheet.items);
+    }
+  }, [rawSheet]);
+
+  if (isLoading) {
+    return (
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <SkeletonCard />
+      </div>
+    );
+  }
+
+  const cycleStatus = (itemId, currentStatus) => {
+    let nextStatus = 'todo';
+    if (currentStatus === 'todo') nextStatus = 'in-progress';
+    else if (currentStatus === 'in-progress') nextStatus = 'solved';
+
+    setItems((prev) =>
+      prev.map((i) => (i.itemId === itemId ? { ...i, status: nextStatus } : i))
+    );
+    
+    const displayStatus = nextStatus === 'solved' ? 'Done' : nextStatus === 'in-progress' ? 'In Progress' : 'Todo';
+    toast.push(`Updated status to "${displayStatus}"`, { type: 'success' });
+  };
+
+  const solvedCount = items.filter((i) => i.status === 'solved').length;
+  const inProgressCount = items.filter((i) => i.status === 'in-progress').length;
+  const totalCount = items.length;
 
   const solvedPct = Math.round((solvedCount / totalCount) * 100);
   const inProgressPct = Math.round((inProgressCount / totalCount) * 100);
@@ -80,16 +105,25 @@ export function SheetDetailPage() {
       <div className="mono-card" style={{ padding: '32px' }}>
         <h3 className="text-mono-title" style={{ margin: '0 0 20px', fontSize: '1.25rem', fontWeight: 800 }}>Problem List</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {sheet.items.map((item) => {
-            const statusColor = item.status === 'solved'
+          {items.map((item) => {
+            const isSolved = item.status === 'solved';
+            const isInProgress = item.status === 'in-progress';
+            
+            const statusLabel = isSolved
+              ? 'Done'
+              : isInProgress
+              ? 'In Progress'
+              : 'Todo';
+
+            const statusColor = isSolved
               ? 'var(--text-primary)'
-              : item.status === 'in-progress'
+              : isInProgress
               ? 'var(--text-secondary)'
               : 'var(--text-secondary)';
 
-            const statusBg = item.status === 'solved'
+            const statusBg = isSolved
               ? (theme === 'light' ? '#e4e4e7' : '#27272a')
-              : item.status === 'in-progress'
+              : isInProgress
               ? (theme === 'light' ? '#f4f4f5' : '#18181b')
               : 'transparent';
 
@@ -110,22 +144,11 @@ export function SheetDetailPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <input
-                    type="checkbox"
-                    checked={item.status === 'solved'}
-                    onChange={() => toast.push(`Updated status for "${item.title}"`, { type: 'success' })}
-                    style={{
-                      cursor: 'pointer',
-                      width: '18px',
-                      height: '18px',
-                      accentColor: 'var(--text-primary)',
-                    }}
-                  />
                   <span style={{
-                    color: item.status === 'solved' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    color: isSolved ? 'var(--text-secondary)' : 'var(--text-primary)',
                     fontWeight: 600,
                     fontSize: '0.98rem',
-                    textDecoration: item.status === 'solved' ? 'line-through' : 'none'
+                    textDecoration: isSolved ? 'line-through' : 'none'
                   }}>
                     {item.title}
                   </span>
@@ -133,17 +156,23 @@ export function SheetDetailPage() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.82rem' }}>
                   <span style={{ color: diffColor, fontWeight: 700, letterSpacing: '0.02em' }}>{item.difficulty}</span>
-                  <span style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    background: statusBg,
-                    border: item.status === 'todo' ? '1px solid var(--border-color)' : 'none',
-                    color: statusColor,
-                    textTransform: 'capitalize',
-                    fontWeight: 700
-                  }}>
-                    {item.status}
-                  </span>
+                  <button
+                    onClick={() => cycleStatus(item.itemId, item.status)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      background: statusBg,
+                      border: item.status === 'todo' ? '1px solid var(--border-color)' : 'none',
+                      color: statusColor,
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      outline: 'none',
+                      fontSize: '0.8rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {statusLabel}
+                  </button>
                 </div>
               </div>
             );

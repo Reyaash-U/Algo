@@ -9,7 +9,12 @@ export function PatternTags({ tags = [], onTagClick }) {
         <span
           key={tag}
           onClick={() => onTagClick && onTagClick(tag)}
-          className="inline-block px-2.5 py-0.5 rounded-full bg-white/5 text-gray-300 border border-white/10 text-xs font-medium hover:bg-violet-500/20 hover:text-violet-200 hover:border-violet-500/40 transition-all cursor-pointer"
+          className="inline-block px-2.5 py-0.5 rounded-full bg-white/5 text-xs font-medium transition-all cursor-pointer border border-white/10 hover:bg-zinc-200 hover:text-black hover:border-zinc-200 dark:hover:bg-white dark:hover:text-black"
+          style={{
+            borderColor: 'var(--border-color)',
+            color: 'var(--text-secondary)',
+            background: 'var(--bg-secondary)',
+          }}
         >
           #{tag}
         </span>
