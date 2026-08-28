@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
+import { AlertTriangle } from 'lucide-react';
 
 export function AuthPage() {
   const { login } = useAuth();
@@ -83,7 +84,7 @@ export function AuthPage() {
             />
           </label>
 
-          {error && <p className="av-form-error" style={{ fontSize: '0.85rem', margin: '16px 0 0', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>⚠️ {error}</p>}
+          {error && <p className="av-form-error" style={{ fontSize: '0.85rem', margin: '16px 0 0', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={16} /> {error}</p>}
 
           <button type="submit" className="btn-mono-primary" disabled={submitting} style={{ marginTop: '24px', padding: '12px', width: '100%', justifyContent: 'center' }}>
             {submitting ? 'Signing in…' : 'Sign In →'}

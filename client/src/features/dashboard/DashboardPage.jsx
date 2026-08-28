@@ -7,12 +7,21 @@ import { SubmissionHeatmap } from '../../components/shared/SubmissionHeatmap.jsx
 import { CodeforcesBadge } from '../../components/shared/CodeforcesBadge.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
+import { PatternHeatmap } from './components/PatternHeatmap.jsx';
+import { ConfidenceRadar } from './components/ConfidenceRadar.jsx';
+import { StalenessAlerts } from './components/StalenessAlerts.jsx';
+import { BarChart3, Flame, Zap } from 'lucide-react';
 
 export function DashboardPage() {
   const { theme } = useTheme();
   const { data: summary, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.dashboardSummary,
     queryFn: () => api.dashboard.summary(),
+  });
+
+  const { data: dueData } = useQuery({
+    queryKey: ['revisionsDue'],
+    queryFn: () => api.revisions.due(),
   });
 
   if (isLoading) {
@@ -35,8 +44,9 @@ export function DashboardPage() {
       {/* Header Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>
-            📊 Analytics & Progress Dashboard
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <BarChart3 size={32} strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} />
+            Analytics & Progress Dashboard
           </h1>
           <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Track problem solving streaks, Codeforces sync, and spaced repetition metrics.
@@ -64,19 +74,21 @@ export function DashboardPage() {
               {streakCurrent} Days <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 400 }}>(Max: {streakLongest})</span>
             </div>
           </div>
-          <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            🔥 Keep your streak alive by solving 1 problem today!
+          <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Flame size={16} strokeWidth={2.5} style={{ color: '#ef4444' }} />
+            Keep your streak alive by solving 1 problem today!
           </div>
         </div>
 
         {/* Due Revision Action Widget */}
         <div className="mono-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              ⚡ DUE REVISIONS
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Zap size={16} strokeWidth={2.5} style={{ color: '#eab308' }} />
+              DUE REVISIONS
             </span>
             <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '12px 0' }}>
-              3 Problems
+              {dueData?.count ?? 0} Problems
             </div>
           </div>
           <Link to="/revise" className="btn-mono-primary" style={{ textDecoration: 'none', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
@@ -88,6 +100,21 @@ export function DashboardPage() {
       {/* Activity Heatmap Grid */}
       <div className="mono-card" style={{ padding: '24px' }}>
         <SubmissionHeatmap monochrome={true} theme={theme} />
+      </div>
+
+      {/* Pattern Heatmap Grid */}
+      <div className="mono-card" style={{ padding: '24px' }}>
+        <PatternHeatmap patternCounts={summary?.patternCounts || []} theme={theme} />
+      </div>
+
+      {/* Radar and Alerts Section */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+        <div className="mono-card" style={{ padding: '24px' }}>
+          <ConfidenceRadar patternCounts={summary?.patternCounts || []} theme={theme} />
+        </div>
+        <div className="mono-card" style={{ padding: '24px' }}>
+          <StalenessAlerts alerts={summary?.stalenessAlerts || []} theme={theme} />
+        </div>
       </div>
     </div>
   );

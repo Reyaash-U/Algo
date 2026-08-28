@@ -1,4 +1,5 @@
 import React from 'react';
+import { Zap, HardDrive } from 'lucide-react';
 
 export function ComplexityPills({ timeComplexity, spaceComplexity }) {
   if (!timeComplexity && !spaceComplexity) return null;
@@ -15,7 +16,7 @@ export function ComplexityPills({ timeComplexity, spaceComplexity }) {
           }}
           title="Time Complexity"
         >
-          ⚡ Time: {timeComplexity}
+          <Zap size={14} style={{ color: '#eab308' }} /> Time: {timeComplexity}
         </span>
       )}
       {spaceComplexity && (
@@ -28,7 +29,7 @@ export function ComplexityPills({ timeComplexity, spaceComplexity }) {
           }}
           title="Space Complexity"
         >
-          💾 Space: {spaceComplexity}
+          <HardDrive size={14} style={{ color: '#3b82f6' }} /> Space: {spaceComplexity}
         </span>
       )}
     </div>

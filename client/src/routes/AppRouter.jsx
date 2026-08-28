@@ -7,6 +7,7 @@ import { useTheme } from '../lib/themeContext.jsx';
 import { AuthPage } from '../features/auth/AuthPage.jsx';
 import { VaultPage } from '../features/vault/VaultPage.jsx';
 import { NoteDetailPage } from '../features/vault/NoteDetailPage.jsx';
+import { NoteFormPage } from '../features/vault/NoteFormPage.jsx';
 import { RevisePage } from '../features/revise/RevisePage.jsx';
 import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
 import { SheetsPage } from '../features/sheets/SheetsPage.jsx';
@@ -27,6 +28,8 @@ export function AppRouter() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/vault" element={<VaultPage />} />
+            <Route path="/note/new" element={<NoteFormPage />} />
+            <Route path="/note/:id/edit" element={<NoteFormPage />} />
             <Route path="/note/:id" element={<NoteDetailPage />} />
             <Route path="/revise" element={<RevisePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />

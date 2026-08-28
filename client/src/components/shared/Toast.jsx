@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
 
 const ToastContext = createContext(null);
 let idSeq = 1;
@@ -34,7 +35,9 @@ export function ToastProvider({ children }) {
                 borderColor: 'var(--border-color)',
               }}
             >
-              <span>{t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️'}</span>
+              <span className="flex items-center">
+                {t.type === 'success' ? <CheckCircle2 size={16} /> : t.type === 'error' ? <XCircle size={16} /> : <Info size={16} />}
+              </span>
               <span>{t.message}</span>
             </div>
           );

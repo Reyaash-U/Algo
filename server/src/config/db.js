@@ -1,11 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { isDev } from './env.js';
 
-// Single Prisma Client instance for the whole app (per Prisma's own
-// guidance — don't instantiate one per request).
-export const prisma = new PrismaClient({
+// Single Prisma Client instance for the whole app.
+// Cache it on the global object in development to prevent hot-reloading from
+// exhausting the database connection pool (EMAXCONNSESSION).
+const globalForPrisma = globalThis;
+
+export const prisma = globalForPrisma.prisma || new PrismaClient({
   log: isDev ? ['warn', 'error'] : ['error'],
 });
+
+if (isDev) globalForPrisma.prisma = prisma;
 
 export async function connectDB() {
   try {

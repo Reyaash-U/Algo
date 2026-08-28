@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrendingUp } from 'lucide-react';
 
 export function SubmissionHeatmap({ activityData, monochrome = false, theme = 'dark' }) {
   // Mock 52 weeks x 7 days grid if no activityData provided
@@ -9,17 +10,17 @@ export function SubmissionHeatmap({ activityData, monochrome = false, theme = 'd
   const getColor = (count) => {
     if (monochrome) {
       if (theme === 'light') {
-        if (!count || count === 0) return '#f4f4f5';
-        if (count === 1) return '#e4e4e7';
-        if (count === 2) return '#a1a1aa';
-        if (count === 3) return '#52525b';
-        return '#09090b';
+        if (!count || count === 0) return '#ebedf0';
+        if (count === 1) return '#9be9a8';
+        if (count === 2) return '#40c463';
+        if (count === 3) return '#30a14e';
+        return '#216e39';
       } else {
-        if (!count || count === 0) return '#18181b';
-        if (count === 1) return '#27272a';
-        if (count === 2) return '#52525b';
-        if (count === 3) return '#a1a1aa';
-        return '#ffffff';
+        if (!count || count === 0) return '#161b22';
+        if (count === 1) return '#0e4429';
+        if (count === 2) return '#006d32';
+        if (count === 3) return '#26a641';
+        return '#39d353';
       }
     }
     if (!count || count === 0) return 'rgba(255, 255, 255, 0.05)';
@@ -45,8 +46,8 @@ export function SubmissionHeatmap({ activityData, monochrome = false, theme = 'd
       border: monochrome ? 'none' : '1px solid rgba(255,255,255,0.08)'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: monochrome ? 'var(--text-primary)' : '#f3f4f6' }}>
-          📈 Submission Activity Heatmap
+        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: monochrome ? 'var(--text-primary)' : '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <TrendingUp size={18} /> Submission Activity Heatmap
         </span>
         <span style={{ fontSize: '0.78rem', color: monochrome ? 'var(--text-secondary)' : '#9ca3af' }}>Last 6 Months</span>
       </div>

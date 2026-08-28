@@ -1,4 +1,5 @@
 import React from 'react';
+import { Flame } from 'lucide-react';
 
 export function CompletionRing({ streak = 7, target = 10, current = 7, size = 120, strokeWidth = 10, monochrome = false, theme = 'dark' }) {
   const radius = (size - strokeWidth) / 2;
@@ -78,8 +79,8 @@ export function CompletionRing({ streak = 7, target = 10, current = 7, size = 12
             justifyContent: 'center',
           }}
         >
-          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: textHeadingColor }}>
-            🔥 {streak}
+          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: textHeadingColor, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Flame size={20} strokeWidth={2.5} style={{ color: '#ef4444' }} /> {streak}
           </span>
           <span style={{ fontSize: '0.68rem', color: textMutedColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Day Streak

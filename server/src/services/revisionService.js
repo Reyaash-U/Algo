@@ -35,9 +35,13 @@ export function applySm2(state, rating) {
     intervalDays = 1;
   } else {
     repetitions += 1;
-    if (repetitions === 1) intervalDays = 1;
-    else if (repetitions === 2) intervalDays = 6;
-    else intervalDays = Math.round(intervalDays * easeFactor);
+    if (repetitions === 1) {
+      intervalDays = q === 3 ? 4 : 1;
+    } else if (repetitions === 2) {
+      intervalDays = q === 3 ? 10 : 6;
+    } else {
+      intervalDays = Math.round(intervalDays * easeFactor);
+    }
   }
 
   return {

@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
+import { Archive } from 'lucide-react';
 
 export function VaultPage() {
   const { theme } = useTheme();
@@ -52,14 +53,16 @@ export function VaultPage() {
     <div className="av-vault-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>📦 My Solution Vault</h1>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Archive size={32} strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} /> My Solution Vault
+          </h1>
           <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Curated DSA problem notes, intuition breakdown, and complexity notes.
           </p>
         </div>
-        <button className="btn-mono-primary">
+        <Link to="/note/new" className="btn-mono-primary" style={{ textDecoration: 'none' }}>
           + New Note
-        </button>
+        </Link>
       </div>
 
       {notes.length === 0 ? (

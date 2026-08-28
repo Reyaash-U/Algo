@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
+import { Brain, Zap, Lock } from 'lucide-react';
 
 export function RevisePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -20,15 +21,20 @@ export function RevisePage() {
   });
 
   const rateMutation = useMutation({
-    mutationFn: ({ noteId, rating }) => api.revisions.review(noteId, rating),
+    mutationFn: ({ id, rating }) => api.revisions.review(id, rating),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.revisionsDue });
       toast.push('Revision recorded successfully!', { type: 'success' });
       setShowAnswer(false);
+      // If we are relying on invalidation to refresh the queue, we shouldn't advance index,
+      // but for mock/demo stability we advance it if it's a static list.
       if (items && currentIndex < items.length - 1) {
         setCurrentIndex((prev) => prev + 1);
       }
     },
+    onError: (err) => {
+      toast.push(`Failed to save rating: ${err.message}`, { type: 'error' });
+    }
   });
 
   if (isLoading) {
@@ -65,14 +71,16 @@ export function RevisePage() {
   const currentCard = items[currentIndex];
 
   const handleRate = (rating) => {
-    rateMutation.mutate({ noteId: currentCard.noteId, rating });
+    rateMutation.mutate({ id: currentCard.id, rating });
   };
 
   return (
     <div className="av-revise-page" style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em' }}>🧠 Spaced Repetition Queue</h1>
+          <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Brain size={32} strokeWidth={2.5} style={{ color: '#ec4899' }} /> Spaced Repetition Queue
+          </h1>
           <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
             Review notes using SM-2 algorithm to lock DSA patterns into long-term memory.
           </p>
@@ -83,13 +91,13 @@ export function RevisePage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState title="Nothing due today 🎉" description="Come back tomorrow or enroll more notes from your Vault!" />
+        <EmptyState title="Nothing due today!" description="Come back tomorrow or enroll more notes from your Vault!" />
       ) : (
         <div className="av-flashcard-stack">
           <div className="mono-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-                ⚡ DUE FOR REVIEW TODAY
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Zap size={16} strokeWidth={2.5} style={{ color: '#eab308' }} /> DUE FOR REVIEW TODAY
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {(currentCard.patternTags ?? []).map((t) => (
@@ -109,7 +117,7 @@ export function RevisePage() {
                 </pre>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', gap: '14px' }}>
-                  <span style={{ fontSize: '2rem' }}>🔒</span>
+                  <Lock size={32} style={{ color: 'var(--text-secondary)' }} />
                   <button className="btn-mono-secondary" onClick={() => setShowAnswer(true)}>
                     Show Solution & Intuition
                   </button>
@@ -120,15 +128,14 @@ export function RevisePage() {
             {showAnswer && (
               <div style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 650, display: 'block', marginBottom: '16px' }}>
-                  Rate Recall Confidence (1 = Forgot, 5 = Mastered):
+                  Rate Recall Confidence:
                 </span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                   {[
-                    { val: 1, label: 'Forgot' },
-                    { val: 2, label: 'Hard' },
-                    { val: 3, label: 'Fair' },
-                    { val: 4, label: 'Good' },
-                    { val: 5, label: 'Easy' }
+                    { val: 0, label: 'Again', desc: 'Forgot it' },
+                    { val: 1, label: 'Hard', desc: 'Recalled with effort' },
+                    { val: 2, label: 'Good', desc: 'Recalled easily' },
+                    { val: 3, label: 'Easy', desc: 'Perfect recall' }
                   ].map((btn) => (
                     <button
                       key={btn.val}
@@ -136,13 +143,15 @@ export function RevisePage() {
                       onClick={() => handleRate(btn.val)}
                       style={{
                         flexDirection: 'column',
-                        padding: '12px 6px',
+                        padding: '16px 8px',
                         borderRadius: '8px',
-                        border: '1px solid var(--border-color)'
+                        border: '1px solid var(--border-color)',
+                        gap: '4px'
                       }}
+                      disabled={rateMutation.isPending}
                     >
-                      <strong style={{ fontSize: '1.1rem' }}>{btn.val}</strong>
-                      <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500, marginTop: '2px' }}>{btn.label}</span>
+                      <strong style={{ fontSize: '1.1rem' }}>{btn.label}</strong>
+                      <span style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 500, textAlign: 'center' }}>{btn.desc}</span>
                     </button>
                   ))}
                 </div>

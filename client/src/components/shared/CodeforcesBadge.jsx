@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trophy } from 'lucide-react';
 
 export function getCfRankInfo(rating = 0) {
   if (rating < 1200) return { title: 'Newbie', colorClass: 'text-gray-400' };
@@ -15,7 +16,7 @@ export function CodeforcesBadge({ handle, rating = 1450 }) {
 
   return (
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-xs bg-white/5 border border-white/10 ${rank.colorClass}`}>
-      <span>🏆 {handle}</span>
+      <span><Trophy size={14} className="inline mr-1" /> {handle}</span>
       <span className="text-[11px] opacity-80">({rank.title} • {rating})</span>
     </div>
   );
