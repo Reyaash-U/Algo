@@ -1,8 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-
-// Minimal toast system. ToastProvider goes near the app root; call useToast()
-// anywhere to push a message. No external dep — swap for a library later if
-// the team wants richer animations.
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
 
 const ToastContext = createContext(null);
 let idSeq = 1;
@@ -19,10 +16,32 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      <div className="av-toast-stack" aria-live="polite">
-        {toasts.map((t) => (
-          <div key={t.id} className={`av-toast av-toast--${t.type}`}>{t.message}</div>
-        ))}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-2.5 z-50" aria-live="polite">
+        {toasts.map((t) => {
+          const borderClass =
+            t.type === 'error'
+              ? 'border-l-4 border-l-red-500'
+              : t.type === 'success'
+              ? 'border-l-4 border-l-zinc-950 dark:border-l-white'
+              : 'border-l-4 border-l-zinc-500';
+
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border shadow-2xl animate-slide-in ${borderClass}`}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-color)',
+              }}
+            >
+              <span className="flex items-center">
+                {t.type === 'success' ? <CheckCircle2 size={16} /> : t.type === 'error' ? <XCircle size={16} /> : <Info size={16} />}
+              </span>
+              <span>{t.message}</span>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

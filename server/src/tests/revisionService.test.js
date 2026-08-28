@@ -10,6 +10,11 @@ test('first "Good" review → interval 1 day, repetitions 1', () => {
   assert.equal(s.intervalDays, 1);
 });
 
+test('first "Easy" review skips 1-day queue → interval 4 days', () => {
+  const s = applySm2(fresh, 3);
+  assert.equal(s.intervalDays, 4);
+});
+
 test('second consecutive pass → interval 6 days', () => {
   let s = applySm2(fresh, 2);
   s = applySm2(s, 2);
@@ -17,9 +22,16 @@ test('second consecutive pass → interval 6 days', () => {
   assert.equal(s.intervalDays, 6);
 });
 
-test('third pass → interval grows geometrically (round(6 * ease))', () => {
-  let s = applySm2(fresh, 3); // Easy
+test('second "Easy" pass → interval 10 days', () => {
+  let s = applySm2(fresh, 3);
   s = applySm2(s, 3);
+  assert.equal(s.repetitions, 2);
+  assert.equal(s.intervalDays, 10);
+});
+
+test('third pass → interval grows geometrically based on easeFactor', () => {
+  let s = applySm2(fresh, 3); // Easy
+  s = applySm2(s, 3); // Easy
   const before = s.intervalDays;
   s = applySm2(s, 3);
   assert.ok(s.intervalDays > before, 'interval should grow');

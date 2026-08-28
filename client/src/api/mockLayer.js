@@ -41,7 +41,21 @@ export const mockHandlers = {
   'POST /problems/resolve': async (body) => mockProblem({ url: body?.url ?? '' }),
 
   'POST /revisions': async (body) => mockRevision({ noteId: body?.noteId }),
-  'GET /revisions/due': async () => ({ items: [mockRevision(), mockRevision()], count: 2 }),
+  'GET /revisions/due': async () => ({
+    items: [
+      mockRevision({
+        noteTitle: 'Two Sum - Hash Map Approach',
+        patternTags: ['HashTable', 'Array'],
+        contentMarkdown: '### Intuition\nUse a hash map to store `target - num` as we iterate.\n\n```python\ndef twoSum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n```',
+      }),
+      mockRevision({
+        noteTitle: '3Sum - Two Pointer Technique',
+        patternTags: ['TwoPointers', 'Sorting'],
+        contentMarkdown: '### Intuition\nSort the array first, fix one element, and run 2-pointer scan on the rest.\n\n```cpp\n// Time: O(N^2), Space: O(1)\n```',
+      })
+    ],
+    count: 2
+  }),
   'POST /revisions/:id/review': async (_b, params) => mockRevision({ id: params.id, repetitions: 1, intervalDays: 1 }),
   'GET /revisions/stats': async () => ({ retention7d: 0.82, dueToday: 5, reviewedToday: 3 }),
 
@@ -56,7 +70,13 @@ export const mockHandlers = {
   'POST /cf/sync': async () => mockCfStats(),
   'GET /cf/stats': async () => mockCfStats(),
   'GET /dashboard/summary': async () => mockDashboardSummary(),
-  'GET /search': async (_b, _p, query) => ({ query: query?.q ?? '', results: [] }),
+  'GET /search': async (_b, _p, query) => ({
+    query: query?.q ?? '',
+    results: [
+      { type: 'sheet', ...mockSheet({ title: "Striver's SDE Sheet", description: '180 must-do problems for top product based companies', visibility: 'public', forkCount: 1240 }) },
+      { type: 'note', ...mockNote({ title: "Dijkstra's Algorithm - Priority Queue", contentMarkdown: '## Approach\nUse a min-heap to always expand the shortest path first.', visibility: 'public', patternTags: ['Graphs', 'ShortestPath'], forkCount: 89 }) }
+    ]
+  }),
 
   'GET /admin/tags': async () => ({ tags: ['dp', 'graphs', 'two-pointers'] }),
   'POST /admin/tags': async (body) => ({ tag: body?.tag ?? 'new-tag' }),

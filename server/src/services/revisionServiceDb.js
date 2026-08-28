@@ -21,6 +21,7 @@ export async function getDueRevisions(userId) {
       userId,
       nextReviewAt: { lte: new Date() },
     },
+    include: { note: true },
     orderBy: { nextReviewAt: 'asc' },
   });
 }

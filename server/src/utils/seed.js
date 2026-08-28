@@ -361,7 +361,7 @@ async function createGeneratedNotes(owner, ownerLabel, count, startIndex, proble
       data: {
         ownerId: owner.id,
         title: problem ? `${problem.title} — notes` : `${pattern} practice #${idx + 1}`,
-        contentMarkdown: `## Approach\nQuick notes on ${problem ? problem.title : pattern} (${ownerLabel}).`,
+        contentMarkdown: `## Approach\nWe can solve **${problem ? problem.title : pattern}** using the standard approach. First, we initialize our state and iterate through the inputs.\n\nAt each step, we carefully consider the invariants. The core intuition is to break the problem down into smaller subproblems or leverage a specific data structure to optimize the bottlenecks.\n\n### Complexity Analysis\n- **Time:** \`O(N)\` because we process each element a constant number of times.\n- **Space:** \`O(N)\` for auxiliary data structures.\n\n### Code Snippet\n\`\`\`python\ndef solve(nums):\n    # TODO: Implement the optimal solution\n    return len(nums)\n\`\`\``,
         problemId: problem ? problem.id : null,
         patternTags: [pattern],
         visibility: visibilityFor(idx),
