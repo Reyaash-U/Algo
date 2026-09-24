@@ -2,11 +2,11 @@
 
 Owns: `/explore` — public sheets/notes browsing + forking.
 
-**Build here:** `PublicSheets`, `PublicNotes` (forkable). Both hit the same
-`api.notes.list()` / `api.sheets.list()` endpoints server-side filtered to
-`visibility: public` — coordinate with Backend Dev on whether that filter is
-a query param or a separate endpoint once they implement it for real
-(currently stubbed to return the requesting user's own items).
+**Status:** implemented. `ExplorePage.jsx` lists public notes/sheets via
+`api.search.query('')` (backend: `searchServiceDb.js`, filters to
+`visibility: 'public'`), with fork (`api.notes.fork`/`api.sheets.fork`) and
+report (`api.notes.report`/`api.sheets.report`) actions per card.
 
-`ExplorePage.jsx` is a placeholder — build out once the backend's public
-listing filter exists.
+**Still open:** no search input wired up yet — it always queries with an
+empty string and relies on the backend's default ordering/limit (30 items
+per type). No tag/platform filtering.

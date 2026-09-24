@@ -9,7 +9,6 @@ import { useTheme } from '../../lib/themeContext.jsx';
 import { Brain, Zap, Lock } from 'lucide-react';
 
 export function RevisePage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -26,11 +25,8 @@ export function RevisePage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.revisionsDue });
       toast.push('Revision recorded successfully!', { type: 'success' });
       setShowAnswer(false);
-      // If we are relying on invalidation to refresh the queue, we shouldn't advance index,
-      // but for mock/demo stability we advance it if it's a static list.
-      if (items && currentIndex < items.length - 1) {
-        setCurrentIndex((prev) => prev + 1);
-      }
+      // The reviewed card leaves the due queue on refetch, so the next due
+      // card naturally becomes items[0] — no index to advance.
     },
     onError: (err) => {
       toast.push(`Failed to save rating: ${err.message}`, { type: 'error' });
@@ -47,28 +43,8 @@ export function RevisePage() {
 
   if (isError) return <p className="av-form-error">Failed to load queue: {error.message}</p>;
 
-  // Provide mock fallback items if backend queue is empty for demo/scaffold purposes
-  const rawItems = data?.items ?? [];
-  const items = rawItems.length > 0 ? rawItems : [
-    {
-      id: 'rev-1',
-      noteId: 'note-1',
-      noteTitle: 'Two Sum - Hash Map Approach',
-      patternTags: ['HashTable', 'Array'],
-      contentMarkdown: '### Intuition\nUse a hash map to store `target - num` as we iterate.\n\n```python\ndef twoSum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n```',
-      repetitions: 2,
-    },
-    {
-      id: 'rev-2',
-      noteId: 'note-2',
-      noteTitle: '3Sum - Two Pointer Technique',
-      patternTags: ['TwoPointers', 'Sorting'],
-      contentMarkdown: '### Intuition\nSort the array first, fix one element, and run 2-pointer scan on the rest.\n\n```cpp\n// Time: O(N^2), Space: O(1)\n```',
-      repetitions: 1,
-    }
-  ];
-
-  const currentCard = items[currentIndex];
+  const items = data?.items ?? [];
+  const currentCard = items[0];
 
   const handleRate = (rating) => {
     rateMutation.mutate({ id: currentCard.id, rating });
@@ -86,7 +62,7 @@ export function RevisePage() {
           </p>
         </div>
         <span className="btn-mono-secondary" style={{ pointerEvents: 'none', padding: '6px 14px', borderRadius: '20px' }}>
-          {currentIndex + 1} / {items.length} Due
+          1 / {items.length} Due
         </span>
       </div>
 

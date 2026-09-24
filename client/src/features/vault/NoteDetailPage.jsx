@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useParams, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
+import { useAuth } from '../../lib/authContext.jsx';
 import { MarkdownRenderer } from '../../components/shared/MarkdownRenderer.jsx';
 import { ComplexityPills } from '../../components/shared/ComplexityPills.jsx';
 import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
-import { Clipboard, Pencil } from 'lucide-react';
+import { Clipboard, Pencil, Trash2, Flag, History, ExternalLink } from 'lucide-react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-java';
@@ -18,14 +19,51 @@ import 'prismjs/components/prism-cpp';
 
 export function NoteDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const toast = useToast();
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: rawNote, isLoading, isError, error } = useQuery({
+  const { data: note, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.note(id),
     queryFn: () => api.notes.get(id),
   });
+
+  const versionsQuery = useQuery({
+    queryKey: [...queryKeys.note(id), 'versions'],
+    queryFn: () => api.notes.versions(id),
+    enabled: showVersions,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.notes.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes() });
+      toast.push('Note deleted', { type: 'success' });
+      navigate('/vault');
+    },
+    onError: (err) => toast.push(`Failed to delete note: ${err.message}`, { type: 'error' }),
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: (reason) => api.notes.report(id, reason),
+    onSuccess: () => toast.push('Report submitted — thanks for flagging it.', { type: 'success' }),
+    onError: (err) => toast.push(`Failed to report: ${err.message}`, { type: 'error' }),
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Delete this note? This cannot be undone.')) {
+      deleteMutation.mutate();
+    }
+  };
+
+  const handleReport = () => {
+    const reason = window.prompt('Why are you reporting this note?');
+    if (reason && reason.trim()) reportMutation.mutate(reason.trim());
+  };
 
   if (isLoading) {
     return (
@@ -35,34 +73,9 @@ export function NoteDetailPage() {
     );
   }
 
-  const note = rawNote ?? {
-    id: id || 'note-1',
-    title: 'Two Sum - Hash Map Optimal Solution',
-    patternTags: ['Array', 'HashTable', 'TwoPointers'],
-    codeBlocks: [{
-      language: 'python',
-      timeComplexity: 'O(N)',
-      spaceComplexity: 'O(N)',
-      code: `class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        seen = {}
-        for i, num in enumerate(nums):
-            diff = target - num
-            if diff in seen:
-                return [seen[diff], i]
-            seen[num] = i
-        return []`
-    }],
-    contentMarkdown: `### 💡 Intuition & Approach
-We use a hash map to store the values we have seen so far along with their indices. 
+  if (isError) return <p className="av-form-error">Failed to load note: {error.message}</p>;
 
-For each number \`num\` in the array, we calculate its complement \`diff = target - num\`. If \`diff\` already exists in our hash map, we have found the target pair and can immediately return \`[seen[diff], current_index]\`.
-
-### ⏱️ Complexity Analysis
-- **Time Complexity:** $O(N)$ because we iterate through the list once and hash map lookups take average $O(1)$ time.
-- **Space Complexity:** $O(N)$ to store up to $N$ elements in the hash map.`,
-  };
-
+  const isOwner = note.ownerId === user?.id;
   const firstBlock = note.codeBlocks?.[0] || {};
   const codeSnippet = firstBlock.code || '';
   const timeComplexity = firstBlock.timeComplexity || 'O(N)';
@@ -95,19 +108,81 @@ For each number \`num\` in the array, we calculate its complement \`diff = targe
           <div>
             <h1 className="text-mono-title" style={{ margin: '0 0 12px', fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.02em' }}>{note.title}</h1>
             <PatternTags tags={note.patternTags} />
+            {note.problem && (
+              <a
+                href={note.problem.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '10px', fontSize: '0.82rem', color: 'var(--text-secondary)', textDecoration: 'none' }}
+              >
+                <ExternalLink size={12} /> {note.problem.title} ({note.problem.platform})
+              </a>
+            )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ filter: theme === 'light' ? 'invert(1) hue-rotate(180deg)' : 'none' }}>
               <ComplexityPills
                 timeComplexity={timeComplexity}
                 spaceComplexity={spaceComplexity}
               />
             </div>
-            <Link to={`/note/${note.id}/edit`} className="btn-mono-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-              <Pencil size={14} /> Edit
-            </Link>
+            {isOwner ? (
+              <>
+                <button
+                  onClick={() => setShowVersions((v) => !v)}
+                  className="btn-mono-secondary"
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <History size={14} /> History
+                </button>
+                <Link to={`/note/${note.id}/edit`} className="btn-mono-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                  <Pencil size={14} /> Edit
+                </Link>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="btn-mono-secondary"
+                  aria-label="Delete note"
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleReport}
+                disabled={reportMutation.isPending}
+                className="btn-mono-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Flag size={14} /> Report
+              </button>
+            )}
           </div>
         </div>
+
+        {showVersions && (
+          <div style={{ marginBottom: '24px', padding: '16px 20px', border: '1px solid var(--border-color)', borderRadius: '10px', background: theme === 'light' ? '#f4f4f5' : '#050505' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700 }}>Version History</h3>
+            {versionsQuery.isLoading && <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Loading versions…</p>}
+            {versionsQuery.data?.versions?.length ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[...versionsQuery.data.versions].reverse().map((v, idx) => (
+                  <div key={idx} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{v.title}</span>
+                    <span>{new Date(v.savedAt).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              !versionsQuery.isLoading && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                  No earlier versions yet — every edit to the title or content is snapshotted here.
+                </p>
+              )
+            )}
+          </div>
+        )}
 
         {/* Code Snippet Box with Floating Copy Button */}
         {codeSnippet && (

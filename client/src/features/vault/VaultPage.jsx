@@ -1,19 +1,37 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
-import { useTheme } from '../../lib/themeContext.jsx';
-import { Archive } from 'lucide-react';
+import { useToast } from '../../components/shared/Toast.jsx';
+import { Archive, Trash2 } from 'lucide-react';
 
 export function VaultPage() {
-  const { theme } = useTheme();
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.notes(),
     queryFn: () => api.notes.list(),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.notes.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes() });
+      toast.push('Note deleted', { type: 'success' });
+    },
+    onError: (err) => toast.push(`Failed to delete note: ${err.message}`, { type: 'error' }),
+  });
+
+  const handleDelete = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm('Delete this note? This cannot be undone.')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -27,27 +45,7 @@ export function VaultPage() {
 
   if (isError) return <p className="av-form-error">Failed to load notes: {error.message}</p>;
 
-  const rawNotes = data?.items ?? [];
-  const notes = rawNotes.length > 0 ? rawNotes : [
-    {
-      id: 'note-1',
-      title: 'Two Sum - Hash Map Optimal Solution',
-      patternTags: ['Array', 'HashTable'],
-      createdAt: '2026-08-01',
-    },
-    {
-      id: 'note-2',
-      title: 'Trapping Rain Water - Monotonic Stack',
-      patternTags: ['TwoPointers', 'Stack', 'DynamicProgramming'],
-      createdAt: '2026-08-03',
-    },
-    {
-      id: 'note-3',
-      title: 'LRU Cache - Doubly Linked List & Hash Map',
-      patternTags: ['LinkedList', 'Design', 'HashTable'],
-      createdAt: '2026-08-04',
-    }
-  ];
+  const notes = data?.items ?? [];
 
   return (
     <div className="av-vault-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -83,10 +81,21 @@ export function VaultPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <span>Saved {n.createdAt}</span>
-                <Link to={`/note/${n.id}`} className="btn-mono-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', textDecoration: 'none' }}>
-                  Open →
-                </Link>
+                <span>Saved {n.createdAt?.slice(0, 10)}</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={(e) => handleDelete(e, n.id)}
+                    className="btn-mono-secondary"
+                    aria-label="Delete note"
+                    disabled={deleteMutation.isPending}
+                    style={{ padding: '6px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <Link to={`/note/${n.id}`} className="btn-mono-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', textDecoration: 'none' }}>
+                    Open →
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

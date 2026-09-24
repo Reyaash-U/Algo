@@ -3,7 +3,9 @@
 Owns: `/admin` — tag taxonomy management + reported-content queue. Route is
 already gated to `role === 'admin'` by `ProtectedRoute`.
 
-**Build here:** `TagManager` (`api.admin.listTags/createTag/deleteTag`),
-`ReportQueue` (`api.admin.reports`).
+**Status:** implemented. `AdminPage.jsx` has a tag manager (add/delete,
+`api.admin.listTags/createTag/deleteTag`) and an open-reports queue with
+resolve/dismiss actions (`api.admin.reports/resolveReport`).
 
-`AdminPage.jsx` is a minimal working tag list to copy the pattern from.
+**Still open:** no pagination on the reports list; no bulk actions; tag
+manager doesn't show which notes/sheets use a tag before deleting it.

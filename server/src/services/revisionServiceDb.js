@@ -26,10 +26,10 @@ export async function getDueRevisions(userId) {
   });
 }
 
-export async function submitReview(revisionId, rating) {
+export async function submitReview(userId, revisionId, rating) {
   const normalizedRating = normalizeRating(rating);
   const revision = await prisma.revision.findUnique({ where: { id: revisionId } });
-  if (!revision) throw ApiError.notFound('Revision not found');
+  if (!revision || revision.userId !== userId) throw ApiError.notFound('Revision not found');
 
   const nextState = applySm2(
     {

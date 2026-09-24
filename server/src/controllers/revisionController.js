@@ -24,7 +24,7 @@ export const due = asyncHandler(async (req, res) => {
 });
 
 export const review = asyncHandler(async (req, res) => {
-  const revision = await submitReview(req.params.id, req.body?.rating);
+  const revision = await submitReview(req.user.id, req.params.id, req.body?.rating);
   res.status(200).json(ok(toRevisionDTO(revision)));
 });
 

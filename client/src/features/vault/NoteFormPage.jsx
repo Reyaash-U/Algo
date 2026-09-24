@@ -5,7 +5,7 @@ import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Link2, ExternalLink } from 'lucide-react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
@@ -28,6 +28,8 @@ export function NoteFormPage() {
     codeSnippet: '',
     contentMarkdown: '',
   });
+  const [problemUrl, setProblemUrl] = useState('');
+  const [resolvedProblem, setResolvedProblem] = useState(null);
 
   // Fetch note if in edit mode
   const { data: note, isLoading } = useQuery({
@@ -47,8 +49,29 @@ export function NoteFormPage() {
         codeSnippet: firstBlock.code || '',
         contentMarkdown: note.contentMarkdown || '',
       });
+      if (note.problem) setResolvedProblem(note.problem);
     }
   }, [note]);
+
+  const resolveMutation = useMutation({
+    mutationFn: (url) => api.problems.resolve(url),
+    onSuccess: (problem) => {
+      setResolvedProblem(problem);
+      setFormData((prev) => ({
+        ...prev,
+        title: prev.title || problem.title,
+        patternTags: prev.patternTags || (problem.tags ?? []).join(', '),
+      }));
+      toast.push(`Linked to "${problem.title}"`, { type: 'success' });
+    },
+    onError: (err) => toast.push(`Couldn't resolve that URL: ${err.message}`, { type: 'error' }),
+  });
+
+  const handleResolve = (e) => {
+    e.preventDefault();
+    if (!problemUrl.trim()) return;
+    resolveMutation.mutate(problemUrl.trim());
+  };
 
   const mutationFn = isEditMode
     ? (data) => api.notes.update(id, data)
@@ -92,6 +115,7 @@ export function NoteFormPage() {
       contentMarkdown: formData.contentMarkdown,
       patternTags: tagsArray,
       codeBlocks: codeBlocks,
+      ...(resolvedProblem ? { problemId: resolvedProblem.id } : {}),
     });
   };
 
@@ -128,6 +152,40 @@ export function NoteFormPage() {
         <h1 className="text-mono-title" style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800 }}>
           {isEditMode ? 'Edit Note' : 'Create New Note'}
         </h1>
+      </div>
+
+      <div className="mono-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)' }}>
+          Link a Problem (LeetCode / Codeforces / GfG URL)
+        </label>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <input
+            type="url"
+            value={problemUrl}
+            onChange={(e) => setProblemUrl(e.target.value)}
+            placeholder="https://leetcode.com/problems/two-sum/"
+            style={{ ...inputStyle, flex: '1 1 280px' }}
+          />
+          <button
+            type="button"
+            onClick={handleResolve}
+            disabled={resolveMutation.isPending}
+            className="btn-mono-secondary"
+            style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Link2 size={16} /> {resolveMutation.isPending ? 'Resolving…' : 'Resolve'}
+          </button>
+        </div>
+        {resolvedProblem && (
+          <a
+            href={resolvedProblem.url}
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-primary)', textDecoration: 'none' }}
+          >
+            <ExternalLink size={14} /> Linked: {resolvedProblem.title} ({resolvedProblem.platform}, {resolvedProblem.difficulty})
+          </a>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="mono-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>

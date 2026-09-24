@@ -8,6 +8,7 @@ import {
   refreshSession,
   revokeSessions,
 } from '../services/authService.js';
+import { updateProfile } from '../services/userService.js';
 
 // Controllers are THIN: validate (done by middleware) → call service → respond.
 // This file is the template every other controller should imitate.
@@ -39,4 +40,9 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const me = asyncHandler(async (req, res) => {
   res.status(200).json(ok({ user: toUserDTO(req.user) }));
+});
+
+export const updateMe = asyncHandler(async (req, res) => {
+  const user = await updateProfile(req.user.id, req.body);
+  res.status(200).json(ok({ user: toUserDTO(user) }));
 });

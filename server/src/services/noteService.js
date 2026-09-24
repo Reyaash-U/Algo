@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { ApiError } from '../utils/apiError.js';
 import { stripDangerous } from '../utils/sanitize.js';
+import { enrollNote } from './revisionServiceDb.js';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -46,7 +47,7 @@ export async function createNote(userId, data = {}) {
     throw ApiError.badRequest('patternTags must be an array');
   }
 
-  return prisma.note.create({
+  const note = await prisma.note.create({
     data: {
       ownerId: userId,
       title: data.title ?? 'Untitled',
@@ -58,7 +59,15 @@ export async function createNote(userId, data = {}) {
       ...(data.confidence !== undefined ? { confidence: data.confidence } : {}),
     },
   });
+
+  // Every new note enters the spaced-repetition queue immediately — this is
+  // what keeps /revisions/due from being permanently empty.
+  await enrollNote(userId, note.id);
+
+  return note;
 }
+
+const MAX_VERSIONS = 50;
 
 export async function updateNote(id, data = {}) {
   if (data.codeBlocks !== undefined && !Array.isArray(data.codeBlocks)) {
@@ -66,6 +75,26 @@ export async function updateNote(id, data = {}) {
   }
   if (data.patternTags !== undefined && !Array.isArray(data.patternTags)) {
     throw ApiError.badRequest('patternTags must be an array');
+  }
+
+  // Snapshot the pre-edit title/content as a version whenever either changes —
+  // this is the autosave safety net described in schema.prisma. Tag/status-only
+  // patches don't churn history since nothing content-bearing moved.
+  let versionsPatch = {};
+  if (data.title !== undefined || data.contentMarkdown !== undefined) {
+    const existing = await prisma.note.findUnique({
+      where: { id },
+      select: { title: true, contentMarkdown: true, versions: true, updatedAt: true },
+    });
+    if (existing) {
+      const currentVersions = Array.isArray(existing.versions) ? existing.versions : [];
+      const snapshot = {
+        title: existing.title,
+        contentMarkdown: existing.contentMarkdown,
+        savedAt: existing.updatedAt.toISOString(),
+      };
+      versionsPatch = { versions: [...currentVersions, snapshot].slice(-MAX_VERSIONS) };
+    }
   }
 
   return prisma.note.update({
@@ -78,6 +107,7 @@ export async function updateNote(id, data = {}) {
       ...(data.patternTags !== undefined ? { patternTags: data.patternTags } : {}),
       ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
       ...(data.confidence !== undefined ? { confidence: data.confidence } : {}),
+      ...versionsPatch,
     },
   });
 }

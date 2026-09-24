@@ -26,6 +26,7 @@ export const mockHandlers = {
   'POST /auth/login': async () => ({ user: mockUser(), accessToken: 'mock-access-token' }),
   'POST /auth/refresh': async () => ({ user: mockUser(), accessToken: 'mock-access-token-2' }),
   'GET /auth/me': async () => ({ user: mockUser() }),
+  'PATCH /auth/me': async (body) => ({ user: mockUser(body) }),
 
   'GET /notes': async () => {
     const items = [mockNote(), mockNote({ title: 'Two Sum revisited' }), mockNote({ title: 'Course Schedule (topo sort)' })];
@@ -37,6 +38,7 @@ export const mockHandlers = {
   'DELETE /notes/:id': async () => ({ deleted: true }),
   'POST /notes/:id/fork': async (_b, params) => mockNote({ forkOf: params.id, forkCount: 1 }),
   'GET /notes/:id/versions': async () => ({ versions: [] }),
+  'POST /notes/:id/report': async (body) => ({ id: 'mock-report', status: 'open', reason: body?.reason ?? '' }),
 
   'POST /problems/resolve': async (body) => mockProblem({ url: body?.url ?? '' }),
 
@@ -66,6 +68,7 @@ export const mockHandlers = {
   'DELETE /sheets/:id': async () => ({ deleted: true }),
   'PATCH /sheets/:id/items/:itemId': async (_b, params) => mockSheet({ id: params.id }),
   'POST /sheets/:id/fork': async (_b, params) => mockSheet({ forkOf: params.id, forkCount: 1 }),
+  'POST /sheets/:id/report': async (body) => ({ id: 'mock-report', status: 'open', reason: body?.reason ?? '' }),
 
   'POST /cf/sync': async () => mockCfStats(),
   'GET /cf/stats': async () => mockCfStats(),
@@ -82,6 +85,7 @@ export const mockHandlers = {
   'POST /admin/tags': async (body) => ({ tag: body?.tag ?? 'new-tag' }),
   'DELETE /admin/tags/:id': async () => ({ deleted: true }),
   'GET /admin/reports': async () => ({ reports: [] }),
+  'PATCH /admin/reports/:id': async (body, params) => ({ id: params.id, status: body?.status ?? 'resolved' }),
 
   'GET /health': async () => ({ status: 'up (mock)', ts: Date.now() }),
 };

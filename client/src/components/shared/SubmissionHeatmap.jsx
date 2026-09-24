@@ -1,8 +1,9 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
 
-export function SubmissionHeatmap({ activityData, monochrome = false, theme = 'dark' }) {
-  // Mock 52 weeks x 7 days grid if no activityData provided
+export function SubmissionHeatmap({ monochrome = false, theme = 'dark' }) {
+  // Deterministic placeholder grid — no per-day activity log exists on the
+  // backend yet, so this is illustrative rather than driven by real data.
   const weeks = 28;
   const days = 7;
 

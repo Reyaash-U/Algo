@@ -1,10 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+const NODE_ENV = process.env.NODE_ENV ?? 'development';
+
 // Fail fast at boot if required config is missing. Better a loud crash on
 // startup than a confusing 500 three screens deep.
+// `fallback` is only ever used outside production — a real deploy with a
+// missing secret must crash, not silently start with a guessable default.
 function required(key, fallback) {
-  const val = process.env[key] ?? fallback;
+  const val = process.env[key] ?? (NODE_ENV === 'production' ? undefined : fallback);
   if (val === undefined) {
     // eslint-disable-next-line no-console
     console.error(`[env] Missing required env var: ${key}`);
@@ -14,7 +18,7 @@ function required(key, fallback) {
 }
 
 export const env = {
-  NODE_ENV: process.env.NODE_ENV ?? 'development',
+  NODE_ENV,
   PORT: parseInt(process.env.PORT ?? '5000', 10),
 
   DATABASE_URL: required('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/algovault'),

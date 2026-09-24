@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { register, login, refresh, logout, me } from '../controllers/authController.js';
+import { register, login, refresh, logout, me, updateMe } from '../controllers/authController.js';
 import { verifyJWT } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { limiters } from '../middleware/rateLimit.js';
-import { registerSchema, loginSchema } from '../validators/auth.validators.js';
+import { registerSchema, loginSchema, updateMeSchema } from '../validators/auth.validators.js';
 
 // REFERENCE ROUTE FILE — fully implemented, no stubs. Copy this pattern.
 const router = Router();
@@ -13,5 +13,6 @@ router.post('/login', limiters.auth, validate(loginSchema), login);
 router.post('/refresh', refresh);
 router.post('/logout', verifyJWT, logout);
 router.get('/me', verifyJWT, me);
+router.patch('/me', verifyJWT, validate(updateMeSchema), updateMe);
 
 export default router;

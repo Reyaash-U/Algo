@@ -2,10 +2,14 @@
 
 Owns: `/sheets` (list) and `/sheets/:id` (detail).
 
-**Build here:** `SheetList`, `SheetDetail`, `ProgressBar`, `CountdownBanner`
-(from `targetDate`), `ForkButton` (`api.sheets.fork(id)`). Item status updates
-go through `api.sheets.updateItem(id, itemId, {status})` using
-`SHEET_ITEM_STATUS` enum values from `@algovault/shared`.
+**Status:** implemented. `SheetsPage.jsx` lists sheets with an inline create
+form (`api.sheets.create`) and delete (`api.sheets.remove`). `SheetDetailPage.jsx`
+has the progress bar, a `CountdownBanner` from `targetDate`, inline edit
+(title/description/target date via `api.sheets.update`), delete, a report
+action for sheets you don't own, and item status cycling through
+`SHEET_ITEM_STATUS` (`todo` → `in_progress` → `done`) via
+`api.sheets.updateItem(id, itemId, {status})`.
 
-`SheetsPage.jsx` and `SheetDetailPage.jsx` are scaffolded with the list/detail
-fetch pattern (copy from `features/vault`).
+**Still open:** no `ForkButton` on the detail page itself (forking currently
+only happens from `/explore`); no UI for adding/removing individual items to
+an existing sheet after creation.

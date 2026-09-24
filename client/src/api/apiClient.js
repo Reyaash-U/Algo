@@ -60,6 +60,7 @@ export const api = {
     refresh: () => call(ENDPOINTS.auth.refresh),
     logout: () => call(ENDPOINTS.auth.logout),
     me: () => call(ENDPOINTS.auth.me),
+    updateMe: (body) => call(ENDPOINTS.auth.updateMe, { body }),
   },
 
   notes: {
@@ -70,6 +71,7 @@ export const api = {
     remove: (id) => call(ENDPOINTS.notes.remove, { params: { id } }),
     fork: (id) => call(ENDPOINTS.notes.fork, { params: { id } }),
     versions: (id) => call(ENDPOINTS.notes.versions, { params: { id } }),
+    report: (id, reason) => call(ENDPOINTS.notes.report, { params: { id }, body: { reason } }),
   },
 
   problems: {
@@ -92,10 +94,11 @@ export const api = {
     updateItem: (id, itemId, body) =>
       call(ENDPOINTS.sheets.updateItem, { params: { id, itemId }, body }),
     fork: (id) => call(ENDPOINTS.sheets.fork, { params: { id } }),
+    report: (id, reason) => call(ENDPOINTS.sheets.report, { params: { id }, body: { reason } }),
   },
 
   cf: {
-    sync: () => call(ENDPOINTS.cf.sync),
+    sync: (handle) => call(ENDPOINTS.cf.sync, { body: { handle } }),
     stats: () => call(ENDPOINTS.cf.stats),
   },
 
@@ -112,6 +115,7 @@ export const api = {
     createTag: (tag) => call(ENDPOINTS.admin.createTag, { body: { tag } }),
     deleteTag: (id) => call(ENDPOINTS.admin.deleteTag, { params: { id } }),
     reports: () => call(ENDPOINTS.admin.reports),
+    resolveReport: (id, status) => call(ENDPOINTS.admin.resolveReport, { params: { id }, body: { status } }),
   },
 
   health: {

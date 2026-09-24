@@ -5,7 +5,7 @@ import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useState } from 'react';
-import { FileText, StickyNote, GitFork } from 'lucide-react';
+import { FileText, StickyNote, GitFork, Flag } from 'lucide-react';
 
 export function ExplorePage() {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ export function ExplorePage() {
     onSuccess: (newSheet) => {
       setForkingId(null);
       toast.push('Sheet forked successfully!', { type: 'success' });
-      navigate(`/sheet/${newSheet.id}`);
+      navigate(`/sheets/${newSheet.id}`);
     },
     onError: (err) => {
       setForkingId(null);
@@ -45,10 +45,23 @@ export function ExplorePage() {
     },
   });
 
+  const reportMutation = useMutation({
+    mutationFn: ({ type, id, reason }) =>
+      type === 'note' ? api.notes.report(id, reason) : api.sheets.report(id, reason),
+    onSuccess: () => toast.push('Report submitted — thanks for flagging it.', { type: 'success' }),
+    onError: (err) => toast.push(`Failed to report: ${err.message}`, { type: 'error' }),
+  });
+
   const handleFork = (e, r) => {
     e.preventDefault(); // prevent triggering any parent link if we wrap it
     if (r.type === 'note') forkNoteMutation.mutate(r.id);
     else forkSheetMutation.mutate(r.id);
+  };
+
+  const handleReport = (e, r) => {
+    e.preventDefault();
+    const reason = window.prompt(`Why are you reporting this ${r.type}?`);
+    if (reason && reason.trim()) reportMutation.mutate({ type: r.type, id: r.id, reason: reason.trim() });
   };
 
   if (isLoading) {
@@ -89,7 +102,7 @@ export function ExplorePage() {
                 </span>
               </div>
               <Link
-                to={r.type === 'sheet' ? `/sheet/${r.id}` : `/note/${r.id}`}
+                to={r.type === 'sheet' ? `/sheets/${r.id}` : `/note/${r.id}`}
                 style={{ textDecoration: 'none', color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: 800 }}
               >
                 {r.title}
@@ -114,7 +127,16 @@ export function ExplorePage() {
               >
                 {forkingId === r.id ? 'Forking...' : <><GitFork size={14} /> Fork</>}
               </button>
-              <Link to={r.type === 'sheet' ? `/sheet/${r.id}` : `/note/${r.id}`} className="btn-mono-secondary" style={{ padding: '6px 14px', fontSize: '0.75rem', textDecoration: 'none' }}>
+              <button
+                onClick={(e) => handleReport(e, r)}
+                disabled={reportMutation.isPending}
+                className="btn-mono-secondary"
+                aria-label={`Report this ${r.type}`}
+                style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+              >
+                <Flag size={13} />
+              </button>
+              <Link to={r.type === 'sheet' ? `/sheets/${r.id}` : `/note/${r.id}`} className="btn-mono-secondary" style={{ padding: '6px 14px', fontSize: '0.75rem', textDecoration: 'none' }}>
                 View →
               </Link>
             </div>

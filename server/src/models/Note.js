@@ -1,3 +1,5 @@
+import { toProblemDTO } from './Problem.js';
+
 export function toNoteDTO(row) {
   return {
     id: row.id,
@@ -6,6 +8,7 @@ export function toNoteDTO(row) {
     contentMarkdown: row.contentMarkdown,
     codeBlocks: row.codeBlocks,
     problemId: row.problemId,
+    problem: row.problem ? toProblemDTO(row.problem) : null,
     patternTags: row.patternTags,
     visibility: row.visibility,
     confidence: row.confidence,

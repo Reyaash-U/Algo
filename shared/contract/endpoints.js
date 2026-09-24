@@ -15,6 +15,7 @@ export const ENDPOINTS = Object.freeze({
     refresh:  { method: 'POST', path: '/auth/refresh',  auth: 'none' },
     logout:   { method: 'POST', path: '/auth/logout',   auth: 'user' },
     me:       { method: 'GET',  path: '/auth/me',       auth: 'user' },
+    updateMe: { method: 'PATCH', path: '/auth/me',      auth: 'user' },
   },
 
   // ---- Notes ----

@@ -7,10 +7,12 @@ import { isDev } from '../config/env.js';
 // free tier; note the cold-start tradeoff in docs/DEPLOYMENT.md).
 export function registerCronJobs() {
   if (isDev) {
-    console.log('[cron] jobs registered (dev: not firing on schedule)');
+    console.log('[cron] skipped in dev — jobs only run when NODE_ENV=production');
+    return;
   }
   // 08:00 daily — email users their due-revision digest.
   cron.schedule('0 8 * * *', dailyRevisionDigest);
   // 03:00 daily — refresh Codeforces stats for users with a handle.
   cron.schedule('0 3 * * *', cfAutoSync);
+  console.log('[cron] jobs registered');
 }

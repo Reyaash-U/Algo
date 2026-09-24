@@ -1,6 +1,25 @@
 import { prisma } from '../config/db.js';
+import { ApiError } from '../utils/apiError.js';
 
 const DAY_MS = 86400000;
+
+// Direct profile edits (displayName, cfHandle) — distinct from the cfHandle
+// write inside cfSyncService, which only sets it as a side effect of a
+// successful sync. This lets a user clear/change it without syncing.
+export async function updateProfile(userId, data = {}) {
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+        ...(data.cfHandle !== undefined ? { cfHandle: data.cfHandle } : {}),
+      },
+    });
+  } catch (err) {
+    if (err.code === 'P2025') throw ApiError.notFound('User not found');
+    throw err;
+  }
+}
 
 function startOfUTCDay(date) {
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
