@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/shared/ProtectedRoute.jsx';
 import { Navbar } from '../components/shared/Navbar.jsx';
+import { GlobalSearchModal } from '../components/shared/GlobalSearchModal.jsx';
 import { useTheme } from '../lib/themeContext.jsx';
 
 // Feature pages — placeholders now, each feature dev fills theirs in.
@@ -22,6 +23,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Navbar />
+      <GlobalSearchModal />
       <main className={`av-main av-theme-${theme}`}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

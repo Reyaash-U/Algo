@@ -15,6 +15,7 @@ import {
   Edit3,
   Save,
   Plus,
+  Trash2,
   ExternalLink,
   ArrowLeft,
   Lock,
@@ -34,7 +35,9 @@ export function SheetDetailPage() {
   const [editDescription, setEditDescription] = useState('');
   const [showAddProblem, setShowAddProblem] = useState(false);
   const [newProblemTitle, setNewProblemTitle] = useState('');
+  const [newProblemUrl, setNewProblemUrl] = useState('');
   const [newProblemDiff, setNewProblemDiff] = useState('Medium');
+  const [newProblemPlatform, setNewProblemPlatform] = useState('LeetCode');
 
   // Fetch sheet from API
   const { data: rawSheet, isLoading, isError, error } = useQuery({
@@ -122,26 +125,35 @@ export function SheetDetailPage() {
 
   // Add problem mutation
   const addProblemMutation = useMutation({
-    mutationFn: (newItem) => {
-      const updatedList = [
-        ...items.map((i) => ({
-          title: i.title,
-          status: i.status,
-          problemId: i.problemId,
-        })),
-        newItem,
-      ];
-      return api.sheets.update(sheet.id, { items: updatedList });
-    },
-    onSuccess: () => {
+    mutationFn: (newItem) => api.sheets.addItem(sheet.id, newItem),
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sheet(sheet.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.sheets });
+      if (res?.items) {
+        setItems(res.items);
+      }
       setShowAddProblem(false);
       setNewProblemTitle('');
+      setNewProblemUrl('');
+      setNewProblemDiff('Medium');
       toast.push('Problem added to sheet!', { type: 'success' });
     },
     onError: (err) => {
       toast.push(`Failed to add problem: ${err.message}`, { type: 'error' });
+    },
+  });
+
+  // Remove problem mutation
+  const removeProblemMutation = useMutation({
+    mutationFn: (itemId) => api.sheets.removeItem(sheet.id, itemId),
+    onSuccess: (_res, itemId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sheet(sheet.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.sheets });
+      setItems((prev) => prev.filter((i) => (i.itemId || i.id) !== itemId));
+      toast.push('Problem removed from sheet', { type: 'success' });
+    },
+    onError: (err) => {
+      toast.push(`Failed to remove problem: ${err.message}`, { type: 'error' });
     },
   });
 
@@ -187,8 +199,18 @@ export function SheetDetailPage() {
     }
     addProblemMutation.mutate({
       title: newProblemTitle.trim(),
+      url: newProblemUrl.trim() || undefined,
+      difficulty: newProblemDiff,
+      platform: newProblemPlatform,
       status: 'todo',
     });
+  };
+
+  const handleRemoveProblem = (itemId, problemTitle) => {
+    if (!isOwner) return;
+    if (window.confirm(`Are you sure you want to remove "${problemTitle}" from this sheet?`)) {
+      removeProblemMutation.mutate(itemId);
+    }
   };
 
   if (isLoading || !sheet) {
@@ -537,7 +559,7 @@ export function SheetDetailPage() {
             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
               Add New Problem to Sheet
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <input
                 type="text"
                 className="av-input"
@@ -546,6 +568,14 @@ export function SheetDetailPage() {
                 onChange={(e) => setNewProblemTitle(e.target.value)}
                 style={{ padding: '8px 12px', fontSize: '0.88rem' }}
                 required
+              />
+              <input
+                type="url"
+                className="av-input"
+                placeholder="Problem URL (optional, e.g. LeetCode link)"
+                value={newProblemUrl}
+                onChange={(e) => setNewProblemUrl(e.target.value)}
+                style={{ padding: '8px 12px', fontSize: '0.88rem' }}
               />
               <select
                 className="av-input"
@@ -556,6 +586,16 @@ export function SheetDetailPage() {
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
                 <option value="Hard">Hard</option>
+              </select>
+              <select
+                className="av-input"
+                value={newProblemPlatform}
+                onChange={(e) => setNewProblemPlatform(e.target.value)}
+                style={{ padding: '8px 12px', fontSize: '0.88rem' }}
+              >
+                <option value="LeetCode">LeetCode</option>
+                <option value="Codeforces">Codeforces</option>
+                <option value="Other">Other</option>
               </select>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -665,7 +705,7 @@ export function SheetDetailPage() {
                   </div>
                 </div>
 
-                {/* Right: Badges, Notes & Interactive Status Button */}
+                {/* Right: Badges, Interactive Status Button & Remove Problem Button */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   {item.difficulty && (
                     <span
@@ -713,6 +753,41 @@ export function SheetDetailPage() {
                     )}
                     {statusLabel}
                   </button>
+
+                  {/* Delete Problem Button (Owner Only) */}
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveProblem(item.itemId || item.id, item.title)}
+                      disabled={removeProblemMutation.isPending}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid transparent',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        padding: '6px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#ef4444';
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                      title="Remove problem from this sheet"
+                      aria-label={`Remove ${item.title}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             );

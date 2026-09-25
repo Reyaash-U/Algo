@@ -95,6 +95,10 @@ export const api = {
     get: (id) => call(ENDPOINTS.sheets.get, { params: { id } }),
     update: (id, body) => call(ENDPOINTS.sheets.update, { params: { id }, body }),
     remove: (id) => call(ENDPOINTS.sheets.remove, { params: { id } }),
+    addItem: (id, body) =>
+      call(ENDPOINTS?.sheets?.addItem ?? { method: 'POST', path: '/sheets/:id/items' }, { params: { id }, body }),
+    removeItem: (id, itemId) =>
+      call(ENDPOINTS?.sheets?.removeItem ?? { method: 'DELETE', path: '/sheets/:id/items/:itemId' }, { params: { id, itemId } }),
     updateItem: (id, itemId, body) =>
       call(ENDPOINTS.sheets.updateItem, { params: { id, itemId }, body }),
     fork: (id) => call(ENDPOINTS.sheets.fork, { params: { id } }),
@@ -122,14 +126,17 @@ export const api = {
   },
 
   search: {
-    query: (q) => call(ENDPOINTS.search.query, { query: { q } }),
+    query: (q, opts = {}) => call(ENDPOINTS.search.query, { query: { q, ...opts } }),
+    global: (q) => call(ENDPOINTS.search.query, { query: { q, scope: 'global' } }),
   },
 
   admin: {
     listTags: () => call(ENDPOINTS.admin.listTags),
+    tagUsage: (id) => call(ENDPOINTS.admin.tagUsage, { params: { id } }),
     createTag: (tag) => call(ENDPOINTS.admin.createTag, { body: { tag } }),
     deleteTag: (id) => call(ENDPOINTS.admin.deleteTag, { params: { id } }),
-    reports: () => call(ENDPOINTS.admin.reports),
+    reports: (query) => call(ENDPOINTS.admin.reports, { query }),
+    resolveReport: (id, status) => call(ENDPOINTS.admin.resolveReport, { params: { id }, body: { status } }),
   },
 
   health: {

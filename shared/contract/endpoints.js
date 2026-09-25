@@ -50,7 +50,9 @@ export const ENDPOINTS = Object.freeze({
     get:        { method: 'GET',    path: '/sheets/:id',                auth: 'user' },
     update:     { method: 'PATCH',  path: '/sheets/:id',                auth: 'user' },
     remove:     { method: 'DELETE', path: '/sheets/:id',                auth: 'user' },
+    addItem:    { method: 'POST',   path: '/sheets/:id/items',          auth: 'user' },
     updateItem: { method: 'PATCH',  path: '/sheets/:id/items/:itemId',  auth: 'user' },
+    removeItem: { method: 'DELETE', path: '/sheets/:id/items/:itemId',  auth: 'user' },
     fork:       { method: 'POST',   path: '/sheets/:id/fork',           auth: 'user' },
     forkGithub: { method: 'POST',   path: '/sheets/fork-github',        auth: 'user' },
     report:     { method: 'POST',   path: '/sheets/:id/report',         auth: 'user' },
@@ -76,6 +78,7 @@ export const ENDPOINTS = Object.freeze({
   // ---- Admin ----
   admin: {
     listTags:   { method: 'GET',    path: '/admin/tags',       auth: 'admin' },
+    tagUsage:   { method: 'GET',    path: '/admin/tags/:id/usage', auth: 'admin' },
     createTag:  { method: 'POST',   path: '/admin/tags',       auth: 'admin' },
     deleteTag:     { method: 'DELETE', path: '/admin/tags/:id',    auth: 'admin' },
     reports:       { method: 'GET',    path: '/admin/reports',     auth: 'admin' },

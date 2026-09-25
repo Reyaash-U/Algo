@@ -83,7 +83,9 @@ export const mockHandlers = {
   'GET /sheets/:id': async (_b, params) => mockSheet({ id: params.id }),
   'PATCH /sheets/:id': async (body, params) => mockSheet({ id: params.id, ...body }),
   'DELETE /sheets/:id': async () => ({ deleted: true }),
+  'POST /sheets/:id/items': async (_b, params) => mockSheet({ id: params.id }),
   'PATCH /sheets/:id/items/:itemId': async (_b, params) => mockSheet({ id: params.id }),
+  'DELETE /sheets/:id/items/:itemId': async (_b, params) => ({ success: true, itemId: params.itemId }),
   'POST /sheets/:id/fork': async (_b, params) => mockSheet({ forkOf: params.id, forkCount: 1 }),
   'POST /sheets/fork-github': async (body) => mockSheet({ title: 'Forked GitHub Sheet', description: `Imported from ${body?.url || ''}` }),
 

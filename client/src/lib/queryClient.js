@@ -30,5 +30,5 @@ export const queryKeys = {
   submissions: (query) => ['submissions', 'list', query ?? {}],
   cfStats: ['cf', 'stats'],
   adminTags: ['admin', 'tags'],
-  adminReports: ['admin', 'reports'],
+  adminReports: (params) => ['admin', 'reports', params ?? {}],
 };

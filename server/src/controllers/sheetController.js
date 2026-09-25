@@ -1,12 +1,15 @@
 import { ok } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/apiError.js';
 import { toSheetDTO } from '../models/Sheet.js';
+import { prisma } from '../config/db.js';
 import {
   listSheets,
   createSheet,
   updateSheet,
   softDeleteSheet,
   updateSheetItem,
+  addSheetItem,
+  removeSheetItem,
 } from '../services/sheetService.js';
 import { forkSheet } from '../services/forkService.js';
 import { forkSheetFromGithub } from '../services/githubSheetService.js';
@@ -47,6 +50,24 @@ export const updateItem = asyncHandler(async (req, res) => {
     item.id === updatedItem.id ? updatedItem : item,
   );
   res.status(200).json(ok(toSheetDTO({ ...req.resource, items })));
+});
+
+export const addItem = asyncHandler(async (req, res) => {
+  await addSheetItem(req.resource.id, req.body);
+  const updatedSheet = await prisma.sheet.findUnique({
+    where: { id: req.resource.id },
+    include: { items: { include: { problem: true } } },
+  });
+  res.status(201).json(ok(toSheetDTO(updatedSheet)));
+});
+
+export const removeItem = asyncHandler(async (req, res) => {
+  await removeSheetItem(req.resource.id, req.params.itemId);
+  const updatedSheet = await prisma.sheet.findUnique({
+    where: { id: req.resource.id },
+    include: { items: { include: { problem: true } } },
+  });
+  res.status(200).json(ok(toSheetDTO(updatedSheet)));
 });
 
 export const fork = asyncHandler(async (req, res) => {
