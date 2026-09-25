@@ -31,6 +31,4 @@ export const queryKeys = {
   cfStats: ['cf', 'stats'],
   adminTags: ['admin', 'tags'],
   adminReports: ['admin', 'reports'],
-  folderTree: ['folders', 'tree'],
-  file: (id) => ['files', 'detail', id],
 };

@@ -15,7 +15,6 @@ import { SheetDetailPage } from '../features/sheets/SheetDetailPage.jsx';
 import { ExplorePage } from '../features/explore/ExplorePage.jsx';
 import { AdminPage } from '../features/admin/AdminPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
-import { FolderTreePage } from '../features/folders/FolderTreePage.jsx';
 
 export function AppRouter() {
   const { theme } = useTheme();
@@ -40,7 +39,6 @@ export function AppRouter() {
             <Route path="/sheets/:id" element={<SheetDetailPage />} />
             <Route path="/sheet/:id" element={<SheetDetailPage />} />
             <Route path="/explore" element={<ExplorePage />} />
-            <Route path="/folders" element={<FolderTreePage />} />
           </Route>
 
           <Route element={<ProtectedRoute adminOnly />}>

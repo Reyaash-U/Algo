@@ -50,8 +50,6 @@ model User {
   cfStats     CfStats?
   reports     Report[]
   submissions Submission[]
-  folders     Folder[]
-  files       File[]
 
   @@map("users")
 }
@@ -227,46 +225,3 @@ model Submission {
   @@index([submittedAt])
   @@map("submissions")
 }
-
-// ── Folder (nested dynamic directory structure) ──────────────────────────
-model Folder {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[] @relation("FolderHierarchy")
-  files     File[]
-  name      String
-  position  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([parentId])
-  @@map("folders")
-}
-
-// ── File (coding files / content files) ──────────────────────────────────
-model File {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folderId        String?
-  folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  name            String
-  code            String   @default("")
-  language        String   @default("javascript")
-  contentMarkdown String   @default("")
-  status          String   @default("pending") // "pending" | "in_progress" | "completed" | "solved"
-  position        Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([userId])
-  @@index([folderId])
-  @@map("files")
-}
-
-
-

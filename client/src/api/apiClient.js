@@ -125,21 +125,6 @@ export const api = {
     query: (q) => call(ENDPOINTS.search.query, { query: { q } }),
   },
 
-  folders: {
-    tree: () => call(ENDPOINTS.folders.tree),
-    create: (body) => call(ENDPOINTS.folders.create, { body }),
-    update: (id, body) => call(ENDPOINTS.folders.update, { params: { id }, body }),
-    remove: (id) => call(ENDPOINTS.folders.remove, { params: { id } }),
-  },
-
-  files: {
-    create: (body) => call(ENDPOINTS.files.create, { body }),
-    get: (id) => call(ENDPOINTS.files.get, { params: { id } }),
-    update: (id, body) => call(ENDPOINTS.files.update, { params: { id }, body }),
-    updateStatus: (id, status) => call(ENDPOINTS.files.updateStatus, { params: { id }, body: { status } }),
-    remove: (id) => call(ENDPOINTS.files.remove, { params: { id } }),
-  },
-
   admin: {
     listTags: () => call(ENDPOINTS.admin.listTags),
     createTag: (tag) => call(ENDPOINTS.admin.createTag, { body: { tag } }),

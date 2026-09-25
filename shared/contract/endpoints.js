@@ -56,22 +56,6 @@ export const ENDPOINTS = Object.freeze({
     report:     { method: 'POST',   path: '/sheets/:id/report',         auth: 'user' },
   },
 
-  // ---- Dynamic Folder & File Tree ----
-  folders: {
-    tree:   { method: 'GET',    path: '/folders/tree', auth: 'user' },
-    create: { method: 'POST',   path: '/folders',      auth: 'user' },
-    update: { method: 'PATCH',  path: '/folders/:id',  auth: 'user' },
-    remove: { method: 'DELETE', path: '/folders/:id',  auth: 'user' },
-  },
-
-  files: {
-    create:       { method: 'POST',   path: '/files',            auth: 'user' },
-    get:          { method: 'GET',    path: '/files/:id',        auth: 'user' },
-    update:       { method: 'PATCH',  path: '/files/:id',        auth: 'user' },
-    updateStatus: { method: 'PATCH',  path: '/files/:id/status', auth: 'user' },
-    remove:       { method: 'DELETE', path: '/files/:id',        auth: 'user' },
-  },
-
   // ---- Stats & misc ----
   cf: {
     sync:  { method: 'POST', path: '/cf/sync',  auth: 'user', rateLimit: 'resolve' },

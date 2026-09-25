@@ -6,7 +6,6 @@ import { Settings } from 'lucide-react';
 
 const NAV_LINKS = [
   { to: '/vault', label: 'Vault' },
-  { to: '/folders', label: 'Folders' },
   { to: '/revise', label: 'Revise' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/sheets', label: 'Sheets' },
