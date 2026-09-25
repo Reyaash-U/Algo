@@ -1,7 +1,8 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Settings, Search, Command } from 'lucide-react';
 
 const NAV_LINKS = [
   { to: '/vault', label: 'Vault' },
@@ -19,6 +20,10 @@ export function Navbar() {
   
   // Mobile menu visibility
   const [isOpen, setIsOpen] = useState(false);
+
+  const isMac = useMemo(() => {
+    return typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  }, []);
 
   // Dynamic active sliding tab tracker refs
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
@@ -126,7 +131,38 @@ export function Navbar() {
         )}
 
         {/* Right actions and utilities */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Quick Search Button (Desktop) */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
+            aria-label="Quick Search"
+            title={isMac ? 'Quick Search (⌘K)' : 'Quick Search (Ctrl+K)'}
+            className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+              theme === 'light'
+                ? 'bg-zinc-100/90 hover:bg-zinc-200/90 border-zinc-200 text-zinc-700'
+                : 'bg-zinc-900/90 hover:bg-zinc-800/90 border-zinc-800 text-zinc-300'
+            }`}
+          >
+            <Search size={13} className={theme === 'light' ? 'text-zinc-500' : 'text-zinc-400'} />
+            <span>Search</span>
+            <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-200/70 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
+              {isMac ? <Command size={9} /> : 'Ctrl'} K
+            </kbd>
+          </button>
+
+          {/* Quick Search Button (Mobile Icon) */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
+            aria-label="Quick Search"
+            className={`sm:hidden p-2 rounded-full border transition-all duration-300 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 ${
+              theme === 'light'
+                ? 'bg-zinc-100 border-zinc-200 hover:bg-zinc-200 text-zinc-900'
+                : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-white'
+            }`}
+          >
+            <Search size={16} />
+          </button>
+
           {/* Light/Dark Toggle */}
           <button
             onClick={toggleTheme}
@@ -148,12 +184,41 @@ export function Navbar() {
             )}
           </button>
 
-          {/* User Display Info & Log out button */}
+          {/* User Display Info & Settings & Log out button */}
           {isAuthenticated ? (
-            <div className="hidden md:flex items-center gap-3">
-              <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                {user?.displayName}
-              </span>
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                to="/settings"
+                className="flex items-center gap-2 no-underline px-2.5 py-1.5 rounded-full transition-all hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                title="Account Settings"
+              >
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    background: theme === 'light' ? '#e4e4e7' : '#27272a',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.72rem',
+                    fontWeight: 750,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    (user?.displayName || 'U').slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                  {user?.displayName}
+                </span>
+                <Settings size={14} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
+              </Link>
               <button
                 onClick={handleLogout}
                 className="btn-mono-secondary"
@@ -163,13 +228,25 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <Link
-              to="/auth"
-              className="btn-mono-primary"
-              style={{ padding: '6px 16px', borderRadius: '9999px', fontSize: '0.75rem', textDecoration: 'none' }}
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className={`no-underline text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer border flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'border-zinc-300 text-zinc-700 hover:text-black hover:bg-zinc-100 hover:border-zinc-400'
+                    : 'border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-900 hover:border-zinc-700'
+                }`}
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="btn-mono-primary"
+                style={{ padding: '6px 14px', borderRadius: '9999px', fontSize: '0.75rem', textDecoration: 'none' }}
+              >
+                Sign Up
+              </Link>
+            </div>
           )}
 
           {/* Hamburger Mobile Menu Toggle */}
@@ -204,6 +281,26 @@ export function Navbar() {
               ? 'bg-white border-zinc-200 text-zinc-950 shadow-zinc-200/50'
               : 'bg-zinc-950 border-zinc-800 text-white shadow-black/80'
           }`}>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                window.dispatchEvent(new CustomEvent('open-global-search'));
+              }}
+              className={`flex items-center justify-between text-sm font-semibold px-4 py-2.5 rounded-full transition-all border cursor-pointer ${
+                theme === 'light'
+                  ? 'bg-zinc-100 hover:bg-zinc-200 border-zinc-200 text-zinc-900'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-200'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Search size={16} />
+                <span>Quick Search</span>
+              </div>
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
+                {isMac ? '⌘K' : 'Ctrl K'}
+              </kbd>
+            </button>
+
             {NAV_LINKS.map((l) => (
               <Link
                 key={l.to}
@@ -231,6 +328,18 @@ export function Navbar() {
                 Admin
               </Link>
             )}
+
+            <Link
+              to="/settings"
+              onClick={() => setIsOpen(false)}
+              className={`no-underline text-sm font-semibold px-4 py-2.5 rounded-full transition-all ${
+                location.pathname.startsWith('/settings')
+                  ? (theme === 'light' ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-950')
+                  : (theme === 'light' ? 'hover:bg-zinc-100 text-zinc-500' : 'hover:bg-zinc-900 text-zinc-400')
+              }`}
+            >
+              Settings
+            </Link>
             
             <div className={`mt-3 pt-3 border-t flex flex-col gap-3 px-4 ${
               theme === 'light' ? 'border-zinc-100' : 'border-zinc-800'

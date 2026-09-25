@@ -8,6 +8,8 @@ export function toUserDTO(row) {
     displayName: row.displayName,
     role: row.role,
     cfHandle: row.cfHandle,
-    createdAt: row.createdAt.toISOString(),
+    avatarUrl: row.avatarUrl || null,
+    bio: row.bio || '',
+    createdAt: row.createdAt ? (row.createdAt.toISOString ? row.createdAt.toISOString() : row.createdAt) : null,
   };
 }

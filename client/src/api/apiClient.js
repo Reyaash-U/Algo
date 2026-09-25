@@ -21,11 +21,15 @@ const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
  * @param {{params?:object, body?:object, query?:object}} opts
  */
 async function call(endpoint, { params = {}, body, query } = {}) {
-  const path = buildPath(endpoint.path, params);
+  const target = endpoint ?? { method: 'GET', path: '/' };
+  if (!target.path) {
+    throw new Error('API endpoint definition is missing or invalid.');
+  }
+  const path = buildPath(target.path, params);
 
   try {
     if (USE_MOCKS) {
-      const mockKey = `${endpoint.method} ${endpoint.path}`; // unresolved path, e.g. "/notes/:id"
+      const mockKey = `${target.method} ${target.path}`; // unresolved path, e.g. "/notes/:id"
       const envelope = await runMock(mockKey, { body, params, query });
       return envelope.data;
     }
@@ -60,6 +64,8 @@ export const api = {
     refresh: () => call(ENDPOINTS.auth.refresh),
     logout: () => call(ENDPOINTS.auth.logout),
     me: () => call(ENDPOINTS.auth.me),
+    updateProfile: (body) =>
+      call(ENDPOINTS?.auth?.updateProfile ?? { method: 'PATCH', path: '/auth/profile' }, { body }),
   },
 
   notes: {
@@ -78,7 +84,7 @@ export const api = {
 
   revisions: {
     enroll: (noteId) => call(ENDPOINTS.revisions.enroll, { body: { noteId } }),
-    due: () => call(ENDPOINTS.revisions.due),
+    due: (query) => call(ENDPOINTS.revisions.due, { query }),
     review: (id, rating) => call(ENDPOINTS.revisions.review, { params: { id }, body: { rating } }),
     stats: () => call(ENDPOINTS.revisions.stats),
   },
@@ -89,29 +95,48 @@ export const api = {
     get: (id) => call(ENDPOINTS.sheets.get, { params: { id } }),
     update: (id, body) => call(ENDPOINTS.sheets.update, { params: { id }, body }),
     remove: (id) => call(ENDPOINTS.sheets.remove, { params: { id } }),
+    addItem: (id, body) =>
+      call(ENDPOINTS?.sheets?.addItem ?? { method: 'POST', path: '/sheets/:id/items' }, { params: { id }, body }),
+    removeItem: (id, itemId) =>
+      call(ENDPOINTS?.sheets?.removeItem ?? { method: 'DELETE', path: '/sheets/:id/items/:itemId' }, { params: { id, itemId } }),
     updateItem: (id, itemId, body) =>
       call(ENDPOINTS.sheets.updateItem, { params: { id, itemId }, body }),
     fork: (id) => call(ENDPOINTS.sheets.fork, { params: { id } }),
+    forkGithub: (body) =>
+      call(ENDPOINTS?.sheets?.forkGithub ?? { method: 'POST', path: '/sheets/fork-github' }, { body }),
   },
 
   cf: {
-    sync: () => call(ENDPOINTS.cf.sync),
-    stats: () => call(ENDPOINTS.cf.stats),
+    sync: (body) => call(ENDPOINTS.cf.sync, { body }),
+    stats: (query) => call(ENDPOINTS.cf.stats, { query }),
+    disconnect: async () => {
+      const res = await http.delete('/cf/disconnect');
+      return res.data?.data;
+    },
   },
 
   dashboard: {
     summary: () => call(ENDPOINTS.dashboard.summary),
+    activityHeatmap: (query) => call(ENDPOINTS.dashboard.activityHeatmap, { query }),
+  },
+
+  submissions: {
+    list: (query) => call(ENDPOINTS.submissions.list, { query }),
+    create: (body) => call(ENDPOINTS.submissions.create, { body }),
   },
 
   search: {
-    query: (q) => call(ENDPOINTS.search.query, { query: { q } }),
+    query: (q, opts = {}) => call(ENDPOINTS.search.query, { query: { q, ...opts } }),
+    global: (q) => call(ENDPOINTS.search.query, { query: { q, scope: 'global' } }),
   },
 
   admin: {
     listTags: () => call(ENDPOINTS.admin.listTags),
+    tagUsage: (id) => call(ENDPOINTS.admin.tagUsage, { params: { id } }),
     createTag: (tag) => call(ENDPOINTS.admin.createTag, { body: { tag } }),
     deleteTag: (id) => call(ENDPOINTS.admin.deleteTag, { params: { id } }),
-    reports: () => call(ENDPOINTS.admin.reports),
+    reports: (query) => call(ENDPOINTS.admin.reports, { query }),
+    resolveReport: (id, status) => call(ENDPOINTS.admin.resolveReport, { params: { id }, body: { status } }),
   },
 
   health: {

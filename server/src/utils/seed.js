@@ -402,6 +402,7 @@ async function run() {
   await connectDB();
 
   // Clean slate — order matters for FK constraints (children before parents).
+  await prisma.submission.deleteMany({});
   await prisma.report.deleteMany({});
   await prisma.revision.deleteMany({});
   await prisma.sheetItem.deleteMany({});
@@ -647,8 +648,58 @@ async function run() {
     },
   });
 
+  // ── Submissions: realistic historical activity for demo, alex, priya ────
+  const submissionRows = [];
+  const nowTs = Date.now();
+
+  // Helper to add submissions on specific days in the past
+  function addSubmissionsForUser(user, problemList, activityDays) {
+    for (const { daysAgo, count } of activityDays) {
+      for (let c = 0; c < count; c++) {
+        const prob = problemList[(daysAgo + c) % problemList.length];
+        const submittedAt = new Date(nowTs - daysAgo * dayMs + (c * 3600000 + 1200000));
+        submissionRows.push({
+          userId: user.id,
+          problemId: prob ? prob.id : null,
+          status: c % 4 === 3 ? 'attempted' : 'accepted',
+          language: ['python', 'cpp', 'java', 'javascript'][(daysAgo + c) % 4],
+          code: 'def solve():\n    return True',
+          submittedAt,
+        });
+      }
+    }
+  }
+
+  // Generate a realistic pattern of days with submissions for demo user (~180 submissions across last 300 days)
+  const demoDays = [];
+  // Active recent streak
+  for (let i = 0; i < 7; i++) demoDays.push({ daysAgo: i, count: (i % 3) + 1 });
+  // Scattered activity across past year
+  for (let i = 8; i < 350; i += 2 + (i % 5)) {
+    const count = (i % 7 === 0) ? 5 : (i % 4 === 0) ? 3 : (i % 2 === 0) ? 2 : 1;
+    demoDays.push({ daysAgo: i, count });
+  }
+  addSubmissionsForUser(demo, problemRows, demoDays);
+
+  // Alex days
+  const alexDays = [];
+  for (let i = 0; i < 14; i++) alexDays.push({ daysAgo: i, count: (i % 2) + 2 });
+  for (let i = 15; i < 280; i += 3 + (i % 4)) {
+    alexDays.push({ daysAgo: i, count: (i % 3) + 1 });
+  }
+  addSubmissionsForUser(alex, problemRows, alexDays);
+
+  // Priya days
+  const priyaDays = [];
+  for (let i = 5; i < 200; i += 4 + (i % 3)) {
+    priyaDays.push({ daysAgo: i, count: (i % 2) + 1 });
+  }
+  addSubmissionsForUser(priya, problemRows, priyaDays);
+
+  await prisma.submission.createMany({ data: submissionRows });
+
   // ── Summary ──────────────────────────────────────────────────────────
-  const [userCount, problemCount, noteCount, revisionCount, sheetCount, sheetItemCount, cfStatsCount, reportCount, tagCount] =
+  const [userCount, problemCount, noteCount, revisionCount, sheetCount, sheetItemCount, cfStatsCount, reportCount, tagCount, submissionCount] =
     await Promise.all([
       prisma.user.count(),
       prisma.problem.count(),
@@ -659,6 +710,7 @@ async function run() {
       prisma.cfStats.count(),
       prisma.report.count(),
       prisma.tag.count(),
+      prisma.submission.count(),
     ]);
 
   console.log('[seed] summary:');
@@ -671,6 +723,7 @@ async function run() {
   console.log(`  cfStats:    ${cfStatsCount}`);
   console.log(`  reports:    ${reportCount}`);
   console.log(`  tags:       ${tagCount}`);
+  console.log(`  submissions: ${submissionCount}`);
   console.log(
     '[seed] accounts (password: password123): demo@algovault.dev (user), admin@algovault.dev (admin), alex@algovault.dev (user), priya@algovault.dev (user)',
   );

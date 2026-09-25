@@ -43,9 +43,12 @@ http.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
-    const isAuthRoute = original?.url?.includes('/auth/');
+    const isAuthHandshake =
+      original?.url?.includes('/auth/login') ||
+      original?.url?.includes('/auth/register') ||
+      original?.url?.includes('/auth/refresh');
 
-    if (status === 401 && !original._retry && !isAuthRoute) {
+    if (status === 401 && !original._retry && !isAuthHandshake) {
       original._retry = true;
       try {
         if (!refreshPromise) {

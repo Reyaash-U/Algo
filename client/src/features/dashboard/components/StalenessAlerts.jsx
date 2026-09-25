@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 
-export function StalenessAlerts({ alerts, theme }) {
+export function StalenessAlerts({ alerts }) {
   if (!alerts || alerts.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>

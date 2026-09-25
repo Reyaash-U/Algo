@@ -1,14 +1,19 @@
 import { ok } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/apiError.js';
 import { toSheetDTO } from '../models/Sheet.js';
+import { prisma } from '../config/db.js';
 import {
   listSheets,
   createSheet,
   updateSheet,
   softDeleteSheet,
   updateSheetItem,
+  addSheetItem,
+  removeSheetItem,
 } from '../services/sheetService.js';
 import { forkSheet } from '../services/forkService.js';
+import { forkSheetFromGithub } from '../services/githubSheetService.js';
+import { ApiError } from '../utils/apiError.js';
 
 export const list = asyncHandler(async (req, res) => {
   const items = await listSheets(req.user.id);
@@ -47,7 +52,34 @@ export const updateItem = asyncHandler(async (req, res) => {
   res.status(200).json(ok(toSheetDTO({ ...req.resource, items })));
 });
 
+export const addItem = asyncHandler(async (req, res) => {
+  await addSheetItem(req.resource.id, req.body);
+  const updatedSheet = await prisma.sheet.findUnique({
+    where: { id: req.resource.id },
+    include: { items: { include: { problem: true } } },
+  });
+  res.status(201).json(ok(toSheetDTO(updatedSheet)));
+});
+
+export const removeItem = asyncHandler(async (req, res) => {
+  await removeSheetItem(req.resource.id, req.params.itemId);
+  const updatedSheet = await prisma.sheet.findUnique({
+    where: { id: req.resource.id },
+    include: { items: { include: { problem: true } } },
+  });
+  res.status(200).json(ok(toSheetDTO(updatedSheet)));
+});
+
 export const fork = asyncHandler(async (req, res) => {
   const sheet = await forkSheet(req.resource.id, req.user.id);
+  res.status(201).json(ok(toSheetDTO(sheet)));
+});
+
+export const forkGithub = asyncHandler(async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    throw ApiError.badRequest('GitHub URL is required');
+  }
+  const sheet = await forkSheetFromGithub(req.user.id, url.trim());
   res.status(201).json(ok(toSheetDTO(sheet)));
 });

@@ -1,4 +1,5 @@
 import { ok } from '@algovault/shared';
+import { prisma } from '../config/db.js';
 import { asyncHandler } from '../utils/apiError.js';
 import { REFRESH_COOKIE, refreshCookieOptions } from '../utils/tokens.js';
 import { toUserDTO } from '../models/User.js';
@@ -7,6 +8,7 @@ import {
   loginUser,
   refreshSession,
   revokeSessions,
+  updateUserProfile,
 } from '../services/authService.js';
 
 // Controllers are THIN: validate (done by middleware) → call service → respond.
@@ -38,5 +40,12 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const me = asyncHandler(async (req, res) => {
-  res.status(200).json(ok({ user: toUserDTO(req.user) }));
+  const rows = await prisma.$queryRawUnsafe('SELECT * FROM users WHERE id = $1', req.user.id);
+  const userRow = rows?.[0] || req.user;
+  res.status(200).json(ok({ user: toUserDTO(userRow) }));
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+  const updatedUser = await updateUserProfile(req.user.id, req.body);
+  res.status(200).json(ok({ user: updatedUser }));
 });

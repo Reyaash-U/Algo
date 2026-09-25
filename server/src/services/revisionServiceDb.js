@@ -2,6 +2,7 @@ import { prisma } from '../config/db.js';
 import { ApiError } from '../utils/apiError.js';
 import { applySm2, nextReviewDate } from './revisionService.js';
 import { recordActivity } from './userService.js';
+import { createSubmission } from './submissionService.js';
 
 const PASS_RATING = 2;
 
@@ -15,12 +16,44 @@ export async function enrollNote(userId, noteId) {
   });
 }
 
-export async function getDueRevisions(userId) {
-  return prisma.revision.findMany({
+export async function getDueRevisions(userId, options = {}) {
+  // Auto-enroll user's active notes if not already enrolled
+  const userNotes = await prisma.note.findMany({
     where: {
-      userId,
-      nextReviewAt: { lte: new Date() },
+      ownerId: userId,
+      deletedAt: null,
     },
+    select: { id: true },
+  });
+
+  if (userNotes.length > 0) {
+    for (const note of userNotes) {
+      await prisma.revision.upsert({
+        where: { userId_noteId: { userId, noteId: note.id } },
+        update: {},
+        create: {
+          userId,
+          noteId: note.id,
+          nextReviewAt: new Date(),
+        },
+      }).catch(() => null);
+    }
+  }
+
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const where = {
+    userId,
+    note: { deletedAt: null },
+  };
+
+  if (!options.all) {
+    where.nextReviewAt = { lte: endOfToday };
+  }
+
+  return prisma.revision.findMany({
+    where,
     include: { note: true },
     orderBy: { nextReviewAt: 'asc' },
   });
@@ -28,7 +61,41 @@ export async function getDueRevisions(userId) {
 
 export async function submitReview(revisionId, rating) {
   const normalizedRating = normalizeRating(rating);
-  const revision = await prisma.revision.findUnique({ where: { id: revisionId } });
+  let revision = await prisma.revision.findUnique({
+    where: { id: revisionId },
+    include: { note: true },
+  });
+
+  // If not found directly by revision ID, check if note ID was passed
+  if (!revision) {
+    revision = await prisma.revision.findFirst({
+      where: { noteId: revisionId },
+      include: { note: true },
+    });
+  }
+
+  // If not enrolled yet, check if note exists and enroll it on the fly
+  if (!revision) {
+    const note = await prisma.note.findUnique({
+      where: { id: revisionId },
+    });
+    if (note) {
+      const enrolled = await enrollNote(note.ownerId, note.id);
+      revision = await prisma.revision.findUnique({
+        where: { id: enrolled.id },
+        include: { note: true },
+      });
+    }
+  }
+
+  // Graceful fallback if mock or stale prefix ID was submitted
+  if (!revision && revisionId && String(revisionId).startsWith('rev-')) {
+    revision = await prisma.revision.findFirst({
+      where: { note: { deletedAt: null } },
+      include: { note: true },
+    });
+  }
+
   if (!revision) throw ApiError.notFound('Revision not found');
 
   const nextState = applySm2(
@@ -51,7 +118,7 @@ export async function submitReview(revisionId, rating) {
 
   const [updated] = await Promise.all([
     prisma.revision.update({
-      where: { id: revisionId },
+      where: { id: revision.id },
       data: {
         repetitions: nextState.repetitions,
         intervalDays: nextState.intervalDays,
@@ -62,6 +129,12 @@ export async function submitReview(revisionId, rating) {
       },
     }),
     recordActivity(revision.userId, reviewedAt),
+    createSubmission(revision.userId, {
+      problemId: revision.note?.problemId ?? null,
+      noteId: revision.noteId,
+      status: normalizedRating >= PASS_RATING ? 'accepted' : 'attempted',
+      submittedAt: reviewedAt,
+    }),
   ]);
 
   return updated;
@@ -79,8 +152,8 @@ export async function getRevisionStats(userId) {
   const now = new Date();
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(startOfToday);
-  endOfToday.setDate(endOfToday.getDate() + 1);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
 
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -88,10 +161,8 @@ export async function getRevisionStats(userId) {
   const dueTodayPromise = prisma.revision.count({
     where: {
       userId,
-      nextReviewAt: {
-        gte: startOfToday,
-        lt: endOfToday,
-      },
+      nextReviewAt: { lte: endOfToday },
+      note: { deletedAt: null },
     },
   });
 
