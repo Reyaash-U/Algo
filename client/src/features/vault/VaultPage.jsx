@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
-import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
 import {
@@ -12,7 +11,6 @@ import {
   Search,
   X,
   Filter,
-  Eye,
   Lock,
   Globe,
   Link as LinkIcon,
@@ -53,17 +51,7 @@ export function VaultPage() {
     setSearchInput(activeQ);
   }, [activeQ]);
 
-  // Debounce updating URL query param for search text
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== activeQ) {
-        updateFilter('q', searchInput);
-      }
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  const updateFilter = (key, value) => {
+  const updateFilter = useCallback((key, value) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (!value || value === 'all') {
@@ -73,7 +61,17 @@ export function VaultPage() {
       }
       return next;
     });
-  };
+  }, [setSearchParams]);
+
+  // Debounce updating URL query param for search text
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== activeQ) {
+        updateFilter('q', searchInput);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchInput, activeQ, updateFilter]);
 
   const clearFilters = () => {
     setSearchParams({});
@@ -96,8 +94,7 @@ export function VaultPage() {
       }),
   });
 
-  const notes = data?.items ?? [];
-  const totalNotesCount = data?.total ?? notes.length;
+  const notes = useMemo(() => data?.items ?? [], [data?.items]);
 
   const hasActiveFilters = Boolean(activeQ || activeTag || (activeVisibility && activeVisibility !== 'all'));
 

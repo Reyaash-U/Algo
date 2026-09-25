@@ -17,7 +17,7 @@ function toLocalDateString(date) {
 /**
  * Computes intensity level (0..4).
  */
-function calculateIntensity(count, maxCount) {
+function calculateIntensity(count) {
   if (!count || count <= 0) return 0;
   if (count <= 2) return 1;
   if (count <= 5) return 2;
@@ -98,16 +98,15 @@ export function CodeforcesActivityHeatmap({ dailyActivity = {} }) {
 
     // Determine start date of the period
     const startMonthDate = new Date(today.getFullYear(), today.getMonth() - (monthsCount - 1), 1);
-    const startDateStr = toLocalDateString(startMonthDate);
 
-    // Collect all valid elapsed dates: startDateStr <= date <= todayStr
+    // Collect all valid elapsed dates: startDate <= date <= todayStr
     let total = 0;
     let active = 0;
     let maxS = 0;
     let currentS = 0;
     let maxVal = 0;
 
-    let scanDate = new Date(startMonthDate);
+    const scanDate = new Date(startMonthDate);
     while (scanDate <= today) {
       const dateStr = toLocalDateString(scanDate);
       const count = dailyActivity[dateStr] || 0;

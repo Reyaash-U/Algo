@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
-import { useTheme } from '../../lib/themeContext.jsx';
 import {
   AlertTriangle,
   AlertCircle,
@@ -20,7 +19,6 @@ export function AuthPage({ defaultMode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { push } = useToast();
-  const { theme } = useTheme();
 
   // Mode is controlled by route or prop
   const isInitialSignup = defaultMode === 'signup' || location.pathname === '/signup';

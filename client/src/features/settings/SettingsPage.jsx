@@ -15,7 +15,6 @@ import {
   Mail,
   Calendar,
   Shield,
-  ExternalLink,
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -36,7 +35,7 @@ export function SettingsPage() {
   const { theme } = useTheme();
 
   // Load existing user profile values
-  const { data: meData, isLoading: isLoadingUser } = useQuery({
+  const { data: meData } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: () => api.auth.me(),
     initialData: user ? { user } : undefined,

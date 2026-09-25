@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Search, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Sparkles, AlertCircle } from 'lucide-react';
 import { useTheme } from '../../../lib/themeContext.jsx';
 
 export function CodeforcesConnectModal({ isOpen, onClose, onConnect, initialHandle = '', isLoading = false, error = null }) {

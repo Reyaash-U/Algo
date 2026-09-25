@@ -220,8 +220,8 @@ export function CodeforcesSubmissions({ submissions = [] }) {
 
                   {/* Execution Metrics */}
                   <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                    {s.timeConsumedMillis != null ? `${s.timeConsumedMillis}ms` : '—'}
-                    {s.memoryConsumedBytes != null
+                    {s.timeConsumedMillis !== null && s.timeConsumedMillis !== undefined ? `${s.timeConsumedMillis}ms` : '—'}
+                    {s.memoryConsumedBytes !== null && s.memoryConsumedBytes !== undefined
                       ? ` / ${Math.round(s.memoryConsumedBytes / 1024)}KB`
                       : ''}
                   </td>

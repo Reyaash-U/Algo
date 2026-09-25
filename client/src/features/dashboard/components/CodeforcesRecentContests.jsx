@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ExternalLink, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useTheme } from '../../../lib/themeContext.jsx';
 import { getRankTier } from '../services/codeforcesService.js';
 

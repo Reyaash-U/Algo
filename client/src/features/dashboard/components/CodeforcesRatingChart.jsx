@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useTheme } from '../../../lib/themeContext.jsx';
 import { getRankTier } from '../services/codeforcesService.js';
-import { Calendar, TrendingUp, Award, Clock } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 export function CodeforcesRatingChart({ ratingHistory = [] }) {
   const { theme } = useTheme();

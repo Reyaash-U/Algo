@@ -6,16 +6,12 @@ import { queryKeys } from '../../lib/queryClient.js';
 import { EmptyState } from '../../components/shared/EmptyState.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
-import { useTheme } from '../../lib/themeContext.jsx';
 import {
   ClipboardList,
   GitFork,
   ArrowRight,
-  Globe,
   X,
-  ExternalLink,
   Sparkles,
-  Link as LinkIcon,
   AlertCircle,
 } from 'lucide-react';
 
@@ -38,7 +34,6 @@ const PRESET_GITHUB_SHEETS = [
 ];
 
 export function SheetsPage() {
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -51,12 +46,6 @@ export function SheetsPage() {
   const { data: mySheetsData, isLoading: isLoadingMySheets, isError, error } = useQuery({
     queryKey: queryKeys.sheets,
     queryFn: () => api.sheets.list(),
-  });
-
-  // Public explore sheets so users can find sheets even if they haven't created one yet
-  const { data: exploreData, isLoading: isLoadingExplore } = useQuery({
-    queryKey: ['search', 'sheets'],
-    queryFn: () => api.search.query(''),
   });
 
   // Fork Sheet from GitHub Mutation
@@ -94,7 +83,7 @@ export function SheetsPage() {
     forkGithubMutation.mutate(trimmed);
   };
 
-  if (isLoadingMySheets && isLoadingExplore) {
+  if (isLoadingMySheets) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
         <SkeletonCard />
@@ -106,8 +95,6 @@ export function SheetsPage() {
   if (isError) return <p className="av-form-error">Failed to load sheets: {error.message}</p>;
 
   const mySheets = mySheetsData?.items ?? [];
-  const publicSheets = (exploreData?.results ?? []).filter((r) => r.type === 'sheet');
-
   const displaySheets = mySheets;
 
   return (

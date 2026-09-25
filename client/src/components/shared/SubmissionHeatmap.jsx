@@ -13,7 +13,7 @@ function toLocalDateString(date) {
   return `${y}-${m}-${d}`;
 }
 
-function calculateIntensity(count, maxCount) {
+function calculateIntensity(count) {
   if (!count || count <= 0) return 0;
   if (count <= 2) return 1;
   if (count <= 5) return 2;
@@ -23,7 +23,6 @@ function calculateIntensity(count, maxCount) {
 
 export function SubmissionHeatmap({
   activityData: externalData,
-  monochrome = false,
   theme = 'dark',
 }) {
   const isLight = theme === 'light';
@@ -72,7 +71,7 @@ export function SubmissionHeatmap({
     return { from: fromStr, to: toStr };
   }, [range]);
 
-  const { data: fetchedData, isLoading, isError } = useQuery({
+  const { data: fetchedData } = useQuery({
     queryKey: queryKeys.activityHeatmap({ range, from, to, tz }),
     queryFn: () => api.dashboard.activityHeatmap({ from, to, tz }),
     enabled: !externalData,
@@ -137,7 +136,7 @@ export function SubmissionHeatmap({
     let maxS = 0;
     let currentS = 0;
 
-    let scanDate = new Date(startMonthDate);
+    const scanDate = new Date(startMonthDate);
     while (scanDate <= today) {
       const dateStr = toLocalDateString(scanDate);
       const count = countMap[dateStr] || 0;

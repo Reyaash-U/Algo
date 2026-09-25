@@ -75,11 +75,11 @@ export function ExplorePage() {
   };
 
   // Filter results by type on the client side
-  const allResults = data?.results ?? [];
   const filteredResults = useMemo(() => {
+    const allResults = data?.results ?? [];
     if (typeFilter === 'all') return allResults;
     return allResults.filter((r) => r.type === typeFilter);
-  }, [allResults, typeFilter]);
+  }, [data?.results, typeFilter]);
 
   const isLight = theme === 'light';
 

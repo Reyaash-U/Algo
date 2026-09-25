@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../../lib/themeContext.jsx';
 import { api } from '../../../api/apiClient.js';
 import { useToast } from '../../../components/shared/Toast.jsx';
 import {
   fetchCodeforcesData,
   getRankTier,
-  formatRankName,
 } from '../services/codeforcesService.js';
 import { CodeforcesRatingEmptyCard } from './CodeforcesRatingEmptyCard.jsx';
 import { CodeforcesConnectModal } from './CodeforcesConnectModal.jsx';
@@ -18,17 +16,10 @@ import { CodeforcesActivityHeatmap } from './CodeforcesActivityHeatmap.jsx';
 import { SkeletonCard } from '../../../components/shared/Skeleton.jsx';
 import {
   ExternalLink,
-  Trophy,
   RefreshCw,
   LogOut,
   Edit2,
-  TrendingUp,
-  Award,
-  CheckCircle,
   AlertCircle,
-  Hash,
-  Activity,
-  Flame,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'algovault_cf_handle';
@@ -37,7 +28,6 @@ export function CodeforcesDashboard({ defaultHandle = null }) {
   const { theme } = useTheme();
   const isLight = theme === 'light';
   const toast = useToast();
-  const queryClient = useQueryClient();
 
   // Primary state machine
   const [codeforcesId, setCodeforcesId] = useState(() => {
@@ -100,7 +90,7 @@ export function CodeforcesDashboard({ defaultHandle = null }) {
     if (codeforcesId) {
       loadData(codeforcesId);
     }
-  }, []); // Run on mount
+  }, [codeforcesId, loadData]);
 
   // Disconnect handler
   const handleDisconnect = async () => {

@@ -1,5 +1,4 @@
 import { useTheme } from '../../../lib/themeContext.jsx';
-import { CheckCircle2, Target, BarChart2, Layers } from 'lucide-react';
 
 export function CodeforcesProblemStats({ problemStats }) {
   const { theme } = useTheme();

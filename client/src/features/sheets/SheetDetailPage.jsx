@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
@@ -14,16 +14,11 @@ import {
   Circle,
   Edit3,
   Save,
-  X,
   Plus,
-  Trash2,
   ExternalLink,
-  BookOpen,
   ArrowLeft,
-  Calendar,
   Lock,
   Globe,
-  Share2,
 } from 'lucide-react';
 
 export function SheetDetailPage() {
@@ -40,8 +35,6 @@ export function SheetDetailPage() {
   const [showAddProblem, setShowAddProblem] = useState(false);
   const [newProblemTitle, setNewProblemTitle] = useState('');
   const [newProblemDiff, setNewProblemDiff] = useState('Medium');
-  const [newProblemPlatform, setNewProblemPlatform] = useState('LeetCode');
-  const [newProblemUrl, setNewProblemUrl] = useState('');
 
   // Fetch sheet from API
   const { data: rawSheet, isLoading, isError, error } = useQuery({
@@ -116,7 +109,7 @@ export function SheetDetailPage() {
   const updateMetaMutation = useMutation({
     mutationFn: ({ title, description }) =>
       api.sheets.update(sheet.id, { title, description }),
-    onSuccess: (updatedSheet) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sheet(sheet.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.sheets });
       setIsEditingMeta(false);
@@ -140,12 +133,11 @@ export function SheetDetailPage() {
       ];
       return api.sheets.update(sheet.id, { items: updatedList });
     },
-    onSuccess: (updatedSheet) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sheet(sheet.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.sheets });
       setShowAddProblem(false);
       setNewProblemTitle('');
-      setNewProblemUrl('');
       toast.push('Problem added to sheet!', { type: 'success' });
     },
     onError: (err) => {

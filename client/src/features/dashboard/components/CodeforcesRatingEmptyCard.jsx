@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Trophy, ArrowUpRight, Sparkles } from 'lucide-react';
 import { useTheme } from '../../../lib/themeContext.jsx';
 

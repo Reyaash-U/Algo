@@ -178,13 +178,13 @@ export function RevisionSummaryScreen({
             <Percent size={16} style={{ color: '#f59e0b' }} /> Completion
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 850, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {completionPercentage != null ? `${completionPercentage}%` : '100%'}
+            {completionPercentage !== null && completionPercentage !== undefined ? `${completionPercentage}%` : '100%'}
           </div>
         </div>
       </div>
 
       {/* Progress Bar */}
-      {completionPercentage != null && (
+      {completionPercentage !== null && completionPercentage !== undefined && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
             <span>Queue Goal Progress</span>
