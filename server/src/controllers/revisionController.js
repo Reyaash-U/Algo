@@ -14,7 +14,7 @@ export const enroll = asyncHandler(async (req, res) => {
 });
 
 export const due = asyncHandler(async (req, res) => {
-  const items = await getDueRevisions(req.user.id);
+  const items = await getDueRevisions(req.user.id, { all: req.query?.all === 'true' });
   res.status(200).json(
     ok({
       items: items.map(toRevisionDTO),

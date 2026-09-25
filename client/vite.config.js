@@ -15,4 +15,7 @@ export default defineConfig({
     // Allow importing the shared contract package from outside client/ root.
     preserveSymlinks: true,
   },
+  optimizeDeps: {
+    exclude: ['@algovault/shared'],
+  },
 });

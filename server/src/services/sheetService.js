@@ -4,7 +4,7 @@ import { ApiError } from '../utils/apiError.js';
 export async function listSheets(userId) {
   return prisma.sheet.findMany({
     where: { ownerId: userId, deletedAt: null },
-    include: { items: true },
+    include: { items: { include: { problem: true } } },
     orderBy: { updatedAt: 'desc' },
   });
 }

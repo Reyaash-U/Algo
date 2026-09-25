@@ -35,6 +35,8 @@ model User {
   displayName          String
   role                 String    @default("user") // ROLES.USER | ROLES.ADMIN
   cfHandle             String?
+  avatarUrl            String?
+  bio                  String?
   streakCurrent        Int       @default(0)
   streakLongest        Int       @default(0)
   streakLastActiveDate DateTime?
@@ -42,11 +44,14 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  notes     Note[]
-  sheets    Sheet[]
-  revisions Revision[]
-  cfStats   CfStats?
-  reports   Report[]
+  notes       Note[]
+  sheets      Sheet[]
+  revisions   Revision[]
+  cfStats     CfStats?
+  reports     Report[]
+  submissions Submission[]
+  folders     Folder[]
+  files       File[]
 
   @@map("users")
 }
@@ -64,8 +69,9 @@ model Problem {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  notes      Note[]
-  sheetItems SheetItem[]
+  notes       Note[]
+  sheetItems  SheetItem[]
+  submissions Submission[]
 
   @@unique([platform, externalId])
   @@map("problems")
@@ -93,7 +99,8 @@ model Note {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  revisions Revision[]
+  revisions   Revision[]
+  submissions Submission[]
 
   @@index([ownerId])
   @@index([patternTags])
@@ -199,5 +206,67 @@ model Report {
   @@index([reporterId])
   @@map("reports")
 }
+
+// ── Submission ─────────────────────────────────────────────────────────────
+model Submission {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId   String?
+  problem     Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  noteId      String?
+  note        Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  status      String   @default("accepted") // "accepted" | "attempted" | "reviewed"
+  language    String?
+  code        String?  @default("")
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, submittedAt])
+  @@index([submittedAt])
+  @@map("submissions")
+}
+
+// ── Folder (nested dynamic directory structure) ──────────────────────────
+model Folder {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderHierarchy")
+  files     File[]
+  name      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("folders")
+}
+
+// ── File (coding files / content files) ──────────────────────────────────
+model File {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId        String?
+  folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  name            String
+  code            String   @default("")
+  language        String   @default("javascript")
+  contentMarkdown String   @default("")
+  status          String   @default("pending") // "pending" | "in_progress" | "completed" | "solved"
+  position        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([folderId])
+  @@map("files")
+}
+
 
 

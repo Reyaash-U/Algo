@@ -14,6 +14,8 @@ import {
   mockSheet,
   mockDashboardSummary,
   mockCfStats,
+  mockActivityHeatmap,
+  mockSubmission,
 } from '@algovault/shared';
 import { ok, pageMeta } from '@algovault/shared';
 
@@ -26,9 +28,26 @@ export const mockHandlers = {
   'POST /auth/login': async () => ({ user: mockUser(), accessToken: 'mock-access-token' }),
   'POST /auth/refresh': async () => ({ user: mockUser(), accessToken: 'mock-access-token-2' }),
   'GET /auth/me': async () => ({ user: mockUser() }),
+  'PATCH /auth/profile': async (body) => ({ user: mockUser(body || {}) }),
 
-  'GET /notes': async () => {
-    const items = [mockNote(), mockNote({ title: 'Two Sum revisited' }), mockNote({ title: 'Course Schedule (topo sort)' })];
+  'GET /notes': async (_b, _p, query) => {
+    let items = [
+      mockNote({ title: 'Two Sum - Hash Map Approach', patternTags: ['array', 'hashmap', 'two-pointers'], visibility: 'public' }),
+      mockNote({ title: 'Two Sum revisited', patternTags: ['array', 'hashmap'], visibility: 'private' }),
+      mockNote({ title: 'Course Schedule (topo sort)', patternTags: ['graphs', 'topological-sort'], visibility: 'link' }),
+      mockNote({ title: 'Longest Increasing Subsequence', patternTags: ['dp', 'binary-search'], visibility: 'public' }),
+    ];
+    if (query?.tag) {
+      const t = query.tag.toLowerCase();
+      items = items.filter((n) => n.patternTags?.some((tag) => tag.toLowerCase() === t));
+    }
+    if (query?.q) {
+      const q = query.q.toLowerCase();
+      items = items.filter((n) => n.title.toLowerCase().includes(q) || n.contentMarkdown?.toLowerCase().includes(q));
+    }
+    if (query?.visibility && query.visibility !== 'all') {
+      items = items.filter((n) => n.visibility === query.visibility);
+    }
     return { __meta: pageMeta({ page: 1, limit: 20, total: items.length }), items, total: items.length };
   },
   'POST /notes': async (body) => mockNote({ title: body?.title ?? 'Untitled' }),
@@ -66,10 +85,14 @@ export const mockHandlers = {
   'DELETE /sheets/:id': async () => ({ deleted: true }),
   'PATCH /sheets/:id/items/:itemId': async (_b, params) => mockSheet({ id: params.id }),
   'POST /sheets/:id/fork': async (_b, params) => mockSheet({ forkOf: params.id, forkCount: 1 }),
+  'POST /sheets/fork-github': async (body) => mockSheet({ title: 'Forked GitHub Sheet', description: `Imported from ${body?.url || ''}` }),
 
   'POST /cf/sync': async () => mockCfStats(),
   'GET /cf/stats': async () => mockCfStats(),
   'GET /dashboard/summary': async () => mockDashboardSummary(),
+  'GET /dashboard/activity-heatmap': async () => mockActivityHeatmap(),
+  'GET /submissions': async () => ({ items: [mockSubmission()], total: 1 }),
+  'POST /submissions': async (body) => mockSubmission(body || {}),
   'GET /search': async (_b, _p, query) => ({
     query: query?.q ?? '',
     results: [

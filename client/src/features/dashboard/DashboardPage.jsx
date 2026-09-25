@@ -1,26 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { CompletionRing } from '../../components/shared/CompletionRing.jsx';
 import { SubmissionHeatmap } from '../../components/shared/SubmissionHeatmap.jsx';
-import { CodeforcesBadge } from '../../components/shared/CodeforcesBadge.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
 import { PatternHeatmap } from './components/PatternHeatmap.jsx';
 import { ConfidenceRadar } from './components/ConfidenceRadar.jsx';
 import { StalenessAlerts } from './components/StalenessAlerts.jsx';
-import { BarChart3, Flame, Zap } from 'lucide-react';
+import { CodeforcesDashboard } from './components/CodeforcesDashboard.jsx';
+import { SettingsPage } from '../settings/SettingsPage.jsx';
+import { BarChart3, Flame, Zap, Trophy, Settings } from 'lucide-react';
 
 export function DashboardPage() {
   const { theme } = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'codeforces';
+
+  const { data: authData } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => api.auth.me(),
+  });
+
   const { data: summary, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.dashboardSummary,
     queryFn: () => api.dashboard.summary(),
   });
 
   const { data: dueData } = useQuery({
-    queryKey: ['revisionsDue'],
+    queryKey: queryKeys.revisionsDue,
     queryFn: () => api.revisions.due(),
   });
 
@@ -40,7 +49,7 @@ export function DashboardPage() {
   const streakLongest = summary?.streak?.longest ?? 14;
 
   return (
-    <div className="av-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="av-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       {/* Header Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -49,13 +58,95 @@ export function DashboardPage() {
             Analytics & Progress Dashboard
           </h1>
           <p className="text-mono-desc" style={{ margin: '6px 0 0', fontSize: '0.95rem' }}>
-            Track problem solving streaks, Codeforces sync, and spaced repetition metrics.
+            Competitive programming tracking, problem solving streaks, and spaced repetition analytics.
           </p>
         </div>
-        <div style={{ filter: theme === 'light' ? 'invert(1) hue-rotate(180deg)' : 'none' }}>
-          <CodeforcesBadge handle="tourist" rating={1540} />
-        </div>
       </div>
+
+      {/* Navigation Tabs */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '10px',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: 'codeforces' })}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '8px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'codeforces' ? 'var(--text-primary)' : 'transparent',
+            color: activeTab === 'codeforces' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Trophy size={16} />
+          Codeforces Dashboard
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: 'overview' })}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '8px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'overview' ? 'var(--text-primary)' : 'transparent',
+            color: activeTab === 'overview' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <BarChart3 size={16} />
+          AlgoVault & Streaks
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: 'settings' })}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '8px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'settings' ? 'var(--text-primary)' : 'transparent',
+            color: activeTab === 'settings' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Settings size={16} />
+          Settings
+        </button>
+      </div>
+
+      {/* Tab 1: Codeforces Dashboard */}
+      {activeTab === 'codeforces' && (
+        <CodeforcesDashboard defaultHandle={authData?.user?.cfHandle} />
+      )}
+
+      {/* Tab 2: AlgoVault & Streaks */}
+      {activeTab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
       {/* Top Metric Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
@@ -117,5 +208,12 @@ export function DashboardPage() {
         </div>
       </div>
     </div>
+  )}
+
+      {/* Tab 3: Settings */}
+      {activeTab === 'settings' && (
+        <SettingsPage />
+      )}
+</div>
   );
 }

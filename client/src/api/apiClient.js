@@ -21,11 +21,15 @@ const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
  * @param {{params?:object, body?:object, query?:object}} opts
  */
 async function call(endpoint, { params = {}, body, query } = {}) {
-  const path = buildPath(endpoint.path, params);
+  const target = endpoint ?? { method: 'GET', path: '/' };
+  if (!target.path) {
+    throw new Error('API endpoint definition is missing or invalid.');
+  }
+  const path = buildPath(target.path, params);
 
   try {
     if (USE_MOCKS) {
-      const mockKey = `${endpoint.method} ${endpoint.path}`; // unresolved path, e.g. "/notes/:id"
+      const mockKey = `${target.method} ${target.path}`; // unresolved path, e.g. "/notes/:id"
       const envelope = await runMock(mockKey, { body, params, query });
       return envelope.data;
     }
@@ -60,6 +64,8 @@ export const api = {
     refresh: () => call(ENDPOINTS.auth.refresh),
     logout: () => call(ENDPOINTS.auth.logout),
     me: () => call(ENDPOINTS.auth.me),
+    updateProfile: (body) =>
+      call(ENDPOINTS?.auth?.updateProfile ?? { method: 'PATCH', path: '/auth/profile' }, { body }),
   },
 
   notes: {
@@ -78,7 +84,7 @@ export const api = {
 
   revisions: {
     enroll: (noteId) => call(ENDPOINTS.revisions.enroll, { body: { noteId } }),
-    due: () => call(ENDPOINTS.revisions.due),
+    due: (query) => call(ENDPOINTS.revisions.due, { query }),
     review: (id, rating) => call(ENDPOINTS.revisions.review, { params: { id }, body: { rating } }),
     stats: () => call(ENDPOINTS.revisions.stats),
   },
@@ -92,19 +98,46 @@ export const api = {
     updateItem: (id, itemId, body) =>
       call(ENDPOINTS.sheets.updateItem, { params: { id, itemId }, body }),
     fork: (id) => call(ENDPOINTS.sheets.fork, { params: { id } }),
+    forkGithub: (body) =>
+      call(ENDPOINTS?.sheets?.forkGithub ?? { method: 'POST', path: '/sheets/fork-github' }, { body }),
   },
 
   cf: {
-    sync: () => call(ENDPOINTS.cf.sync),
-    stats: () => call(ENDPOINTS.cf.stats),
+    sync: (body) => call(ENDPOINTS.cf.sync, { body }),
+    stats: (query) => call(ENDPOINTS.cf.stats, { query }),
+    disconnect: async () => {
+      const res = await http.delete('/cf/disconnect');
+      return res.data?.data;
+    },
   },
 
   dashboard: {
     summary: () => call(ENDPOINTS.dashboard.summary),
+    activityHeatmap: (query) => call(ENDPOINTS.dashboard.activityHeatmap, { query }),
+  },
+
+  submissions: {
+    list: (query) => call(ENDPOINTS.submissions.list, { query }),
+    create: (body) => call(ENDPOINTS.submissions.create, { body }),
   },
 
   search: {
     query: (q) => call(ENDPOINTS.search.query, { query: { q } }),
+  },
+
+  folders: {
+    tree: () => call(ENDPOINTS.folders.tree),
+    create: (body) => call(ENDPOINTS.folders.create, { body }),
+    update: (id, body) => call(ENDPOINTS.folders.update, { params: { id }, body }),
+    remove: (id) => call(ENDPOINTS.folders.remove, { params: { id } }),
+  },
+
+  files: {
+    create: (body) => call(ENDPOINTS.files.create, { body }),
+    get: (id) => call(ENDPOINTS.files.get, { params: { id } }),
+    update: (id, body) => call(ENDPOINTS.files.update, { params: { id }, body }),
+    updateStatus: (id, status) => call(ENDPOINTS.files.updateStatus, { params: { id }, body: { status } }),
+    remove: (id) => call(ENDPOINTS.files.remove, { params: { id } }),
   },
 
   admin: {

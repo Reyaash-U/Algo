@@ -1,85 +1,506 @@
-import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../api/apiClient.js';
+import { queryKeys } from '../../lib/queryClient.js';
+import { Info, ChevronDown } from 'lucide-react';
 
-export function SubmissionHeatmap({ activityData, monochrome = false, theme = 'dark' }) {
-  // Mock 52 weeks x 7 days grid if no activityData provided
-  const weeks = 28;
-  const days = 7;
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  // Level colors
-  const getColor = (count) => {
-    if (monochrome) {
-      if (theme === 'light') {
-        if (!count || count === 0) return '#ebedf0';
-        if (count === 1) return '#9be9a8';
-        if (count === 2) return '#40c463';
-        if (count === 3) return '#30a14e';
-        return '#216e39';
-      } else {
-        if (!count || count === 0) return '#161b22';
-        if (count === 1) return '#0e4429';
-        if (count === 2) return '#006d32';
-        if (count === 3) return '#26a641';
-        return '#39d353';
+function toLocalDateString(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function calculateIntensity(count, maxCount) {
+  if (!count || count <= 0) return 0;
+  if (count <= 2) return 1;
+  if (count <= 5) return 2;
+  if (count <= 9) return 3;
+  return 4;
+}
+
+export function SubmissionHeatmap({
+  activityData: externalData,
+  monochrome = false,
+  theme = 'dark',
+}) {
+  const isLight = theme === 'light';
+  const [range, setRange] = useState('1y'); // '3m' | '6m' | '1y' | 'all'
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const tz = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  }, []);
+
+  const { from, to } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const toStr = toLocalDateString(today);
+    const past = new Date(today);
+
+    if (range === '3m') {
+      past.setDate(past.getDate() - 91);
+    } else if (range === '6m') {
+      past.setDate(past.getDate() - 182);
+    } else if (range === 'all') {
+      past.setDate(past.getDate() - 365 * 3);
+    } else {
+      past.setDate(past.getDate() - 365);
+    }
+
+    const fromStr = toLocalDateString(past);
+    return { from: fromStr, to: toStr };
+  }, [range]);
+
+  const { data: fetchedData, isLoading, isError } = useQuery({
+    queryKey: queryKeys.activityHeatmap({ range, from, to, tz }),
+    queryFn: () => api.dashboard.activityHeatmap({ from, to, tz }),
+    enabled: !externalData,
+    staleTime: 60_000,
+  });
+
+  const activityData = externalData || fetchedData;
+
+  // Level colors (LeetCode dark green style)
+  const getColor = (intensity) => {
+    if (isLight) {
+      switch (intensity) {
+        case 0: return '#ebedf0';
+        case 1: return '#9be9a8';
+        case 2: return '#40c463';
+        case 3: return '#30a14e';
+        case 4: default: return '#216e39';
+      }
+    } else {
+      switch (intensity) {
+        case 0: return '#282828';
+        case 1: return '#0e4429';
+        case 2: return '#006d32';
+        case 3: return '#26a641';
+        case 4: default: return '#5ee289';
       }
     }
-    if (!count || count === 0) return 'rgba(255, 255, 255, 0.05)';
-    if (count === 1) return 'rgba(139, 92, 246, 0.3)';
-    if (count === 2) return 'rgba(139, 92, 246, 0.6)';
-    if (count === 3) return 'rgba(139, 92, 246, 0.85)';
-    return '#10b981'; // Solved streak high
   };
 
-  // Generate deterministic grid data
-  const grid = Array.from({ length: weeks }, (_, wIdx) =>
-    Array.from({ length: days }, (_, dIdx) => {
-      const pseudoVal = (wIdx * 7 + dIdx) % 5;
-      return pseudoVal === 4 ? (dIdx % 2 === 0 ? 3 : 1) : pseudoVal === 3 ? 0 : pseudoVal;
-    })
-  );
+  // Build the strictly date-aware month clusters
+  const { monthClusters, totalSubmissions, activeDays, maxStreak, rangeLabel } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = toLocalDateString(today);
+
+    const daysList = activityData?.days || [];
+    const countMap = {};
+    for (const d of daysList) {
+      countMap[d.date] = d.count;
+    }
+
+    let monthsCount = 12;
+    let label = 'past one year';
+
+    if (range === '3m') {
+      monthsCount = 3;
+      label = 'past 3 months';
+    } else if (range === '6m') {
+      monthsCount = 6;
+      label = 'past 6 months';
+    } else if (range === 'all') {
+      monthsCount = 24;
+      label = 'all time';
+    }
+
+    const startMonthDate = new Date(today.getFullYear(), today.getMonth() - (monthsCount - 1), 1);
+    const maxCount = Math.max(1, ...daysList.map((d) => d.count || 0));
+
+    // Calculate total, activeDays, and maxStreak for elapsed dates
+    let total = 0;
+    let active = 0;
+    let maxS = 0;
+    let currentS = 0;
+
+    let scanDate = new Date(startMonthDate);
+    while (scanDate <= today) {
+      const dateStr = toLocalDateString(scanDate);
+      const count = countMap[dateStr] || 0;
+      total += count;
+
+      if (count > 0) {
+        active += 1;
+        currentS += 1;
+        if (currentS > maxS) maxS = currentS;
+      } else {
+        currentS = 0;
+      }
+
+      scanDate.setDate(scanDate.getDate() + 1);
+    }
+
+    const clusters = [];
+
+    for (let i = monthsCount - 1; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const monthName = MONTH_NAMES[month];
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const monthDays = [];
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const dayDate = new Date(year, month, dayNum);
+        const dayOfWeek = dayDate.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+        // STRICT DATE-AWARENESS:
+        // Future dates (> today) are NOT rendered
+        const isFuture = dateStr > todayStr;
+        const count = isFuture ? 0 : (countMap[dateStr] || 0);
+
+        monthDays.push({
+          date: dateStr,
+          dayNum,
+          dayOfWeek,
+          count,
+          isFuture,
+          intensity: calculateIntensity(count, maxCount),
+          dateObj: dayDate,
+        });
+      }
+
+      // Group into 7-row columns (Sunday = row 0, Saturday = row 6)
+      const cols = [];
+      let currentCol = [];
+
+      const firstDayOfWeek = monthDays[0].dayOfWeek;
+      for (let p = 0; p < firstDayOfWeek; p++) {
+        currentCol.push(null);
+      }
+
+      for (const day of monthDays) {
+        currentCol.push(day.isFuture ? null : day);
+        if (currentCol.length === 7) {
+          cols.push(currentCol);
+          currentCol = [];
+        }
+      }
+
+      if (currentCol.length > 0) {
+        while (currentCol.length < 7) {
+          currentCol.push(null);
+        }
+        cols.push(currentCol);
+      }
+
+      clusters.push({
+        year,
+        month,
+        monthName,
+        cols,
+      });
+    }
+
+    return {
+      monthClusters: clusters,
+      totalSubmissions: activityData?.total ?? total,
+      activeDays: active,
+      maxStreak: maxS,
+      rangeLabel: label,
+    };
+  }, [activityData, range]);
+
+  const handleCellMouseEnter = (day, e) => {
+    if (!day || day.isFuture) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPos({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8,
+    });
+    setHoveredDay(day);
+  };
+
+  const handleCellMouseLeave = () => {
+    setHoveredDay(null);
+  };
+
+  const formatTooltipDate = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const rangeDisplayNames = {
+    '1y': 'Current',
+    '6m': 'Last 6 months',
+    '3m': 'Last 3 months',
+    'all': 'All time',
+  };
 
   return (
-    <div style={{
-      background: monochrome ? 'transparent' : 'rgba(17, 24, 39, 0.5)',
-      padding: monochrome ? '0' : '16px',
-      borderRadius: '12px',
-      border: monochrome ? 'none' : '1px solid rgba(255,255,255,0.08)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: monochrome ? 'var(--text-primary)' : '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <TrendingUp size={18} /> Submission Activity Heatmap
-        </span>
-        <span style={{ fontSize: '0.78rem', color: monochrome ? 'var(--text-secondary)' : '#9ca3af' }}>Last 6 Months</span>
-      </div>
+    <div
+      style={{
+        background: isLight ? '#ffffff' : '#18181b',
+        padding: '24px 28px',
+        borderRadius: '12px',
+        border: '1px solid var(--border-color)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        position: 'relative',
+      }}
+    >
+      {/* Top Header matching user picture: Total submissions + Active days + Max streak + Dropdown */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        {/* Left: 447 submissions in the past one year ⓘ */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1.45rem', fontWeight: 850, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            {totalSubmissions}
+          </span>
+          <span style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+            submissions in the {rangeLabel}
+          </span>
+          <span
+            title="Aggregated activity across all solution submissions and revisions up to today."
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              color: 'var(--text-secondary)',
+              cursor: 'help',
+              opacity: 0.75,
+            }}
+          >
+            <Info size={15} />
+          </span>
+        </div>
 
-      <div style={{ display: 'flex', gap: '3px', overflowX: 'auto', paddingBottom: '8px' }}>
-        {grid.map((week, w) => (
-          <div key={w} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {week.map((val, d) => (
-              <div
-                key={d}
-                title={`Activity level: ${val}`}
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '2px',
-                  background: getColor(val),
-                  transition: 'transform 0.15s ease',
-                }}
-              />
-            ))}
+        {/* Right: Total active days, Max streak, and Range Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '22px', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Total active days: <strong style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{activeDays}</strong>
           </div>
-        ))}
+
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Max streak: <strong style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{maxStreak}</strong>
+          </div>
+
+          {/* Range Dropdown Pill */}
+          <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                background: isLight ? '#f4f4f5' : '#27272a',
+                color: 'var(--text-primary)',
+                fontSize: '0.82rem',
+                fontWeight: 650,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>{rangeDisplayNames[range] || 'Current'}</span>
+              <ChevronDown size={14} style={{ opacity: 0.7 }} />
+            </button>
+
+            {isDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 4px)',
+                  background: isLight ? '#ffffff' : '#1f1f23',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  zIndex: 50,
+                  minWidth: '140px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {[
+                  { id: '1y', label: 'Current (1 Year)' },
+                  { id: '6m', label: 'Last 6 months' },
+                  { id: '3m', label: 'Last 3 months' },
+                  { id: 'all', label: 'All time' },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setRange(opt.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    style={{
+                      padding: '8px 14px',
+                      textAlign: 'left',
+                      background: range === opt.id ? (isLight ? '#f4f4f5' : '#2a2a30') : 'transparent',
+                      border: 'none',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '12px', fontSize: '0.75rem', color: monochrome ? 'var(--text-secondary)' : '#6b7280' }}>
-        <span>Less</span>
-        <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: getColor(0) }} />
-        <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: getColor(1) }} />
-        <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: getColor(2) }} />
-        <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: getColor(4) }} />
-        <span>More</span>
+      {/* Heatmap Grid Split by Months (LeetCode / Picture Style, strictly date-aware) */}
+      <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '14px',
+            minWidth: 'max-content',
+            padding: '4px 0',
+          }}
+        >
+          {monthClusters.map((cluster) => (
+            <div
+              key={`${cluster.year}-${cluster.month}`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {/* Columns of 7 rows (Sunday to Saturday) */}
+              <div style={{ display: 'flex', gap: '3px' }}>
+                {cluster.cols.map((col, cIdx) => (
+                  <div key={cIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {col.map((day, rIdx) => {
+                      if (!day || day.isFuture) {
+                        return (
+                          <div
+                            key={rIdx}
+                            style={{
+                              width: '11px',
+                              height: '11px',
+                              visibility: 'hidden',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        );
+                      }
+
+                      const bg = getColor(day.intensity);
+                      const isHovered = hoveredDay?.date === day.date;
+
+                      return (
+                        <div
+                          key={day.date}
+                          onMouseEnter={(e) => handleCellMouseEnter(day, e)}
+                          onMouseLeave={handleCellMouseLeave}
+                          style={{
+                            width: '11px',
+                            height: '11px',
+                            borderRadius: '2.5px',
+                            backgroundColor: bg,
+                            cursor: 'pointer',
+                            transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+                            transform: isHovered ? 'scale(1.35)' : 'scale(1)',
+                            zIndex: isHovered ? 10 : 1,
+                            outline: isHovered ? '1px solid var(--text-primary)' : 'none',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* Month label centered below each cluster */}
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 500,
+                  userSelect: 'none',
+                }}
+              >
+                {cluster.monthName}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Floating Hover Tooltip: September 25, 2026 \n 3 submissions (or No submissions) */}
+      {hoveredDay && !hoveredDay.isFuture && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${tooltipPos.x}px`,
+            top: `${tooltipPos.y}px`,
+            transform: 'translate(-50%, -100%)',
+            background: isLight ? '#1f2937' : '#0f172a',
+            color: '#f9fafb',
+            padding: '7px 12px',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            pointerEvents: 'none',
+            zIndex: 9999,
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            lineHeight: 1.35,
+          }}
+        >
+          <div style={{ color: '#9ca3af', fontSize: '0.72rem' }}>
+            {formatTooltipDate(hoveredDay.date)}
+          </div>
+          <div style={{ fontWeight: 750, fontSize: '0.8rem' }}>
+            {hoveredDay.count === 0 ? 'No submissions' : `${hoveredDay.count} ${hoveredDay.count === 1 ? 'submission' : 'submissions'}`}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

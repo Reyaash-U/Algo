@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyJWT } from '../middleware/auth.js';
 import { loadResource, requireOwner, requireReadable } from '../middleware/resourceGuard.js';
-import { list, create, get, update, remove, updateItem, fork } from '../controllers/sheetController.js';
+import { list, create, get, update, remove, updateItem, fork, forkGithub } from '../controllers/sheetController.js';
 import { createSheetReport } from '../controllers/reportController.js';
 
 // BACKEND DEV: same pattern as notes. Guards are wired; swap stubs for
@@ -10,10 +10,11 @@ import { createSheetReport } from '../controllers/reportController.js';
 const router = Router();
 router.use(verifyJWT);
 
-const withItems = { include: { items: true } };
+const withItems = { include: { items: { include: { problem: true } } } };
 
 router.get('/', list);
 router.post('/', create);
+router.post('/fork-github', forkGithub);
 router.get('/:id', loadResource('sheet', withItems), requireReadable, get);
 router.patch('/:id', loadResource('sheet', withItems), requireOwner, update);
 router.delete('/:id', loadResource('sheet'), requireOwner, remove);

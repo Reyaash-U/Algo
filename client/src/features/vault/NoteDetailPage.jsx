@@ -9,7 +9,7 @@ import { PatternTags } from '../../components/shared/PatternTags.jsx';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
 import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
-import { Clipboard, Pencil } from 'lucide-react';
+import { Clipboard, Pencil, Lock, Globe, Link as LinkIcon } from 'lucide-react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-java';
@@ -31,6 +31,17 @@ export function NoteDetailPage() {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <SkeletonCard />
+      </div>
+    );
+  }
+
+  if (isError && !rawNote) {
+    return (
+      <div style={{ maxWidth: '800px', margin: '40px auto', textAlign: 'center' }}>
+        <p className="av-form-error">Note not found: {error?.message || 'The requested note does not exist'}</p>
+        <Link to="/vault" className="btn-mono-secondary" style={{ marginTop: '16px', display: 'inline-block' }}>
+          ← Back to Vault
+        </Link>
       </div>
     );
   }
@@ -82,6 +93,30 @@ For each number \`num\` in the array, we calculate its complement \`diff = targe
     return Prism.highlight(code, grammar, safeLang);
   };
 
+  const renderVisibilityBadge = (vis) => {
+    switch (vis) {
+      case 'public':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: 700, color: '#10b981', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+            <Globe size={13} /> Public
+          </span>
+        );
+      case 'link':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: 700, color: '#3b82f6', padding: '3px 8px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+            <LinkIcon size={13} /> Link-Only
+          </span>
+        );
+      case 'private':
+      default:
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', background: 'var(--border-color)', border: '1px solid var(--border-color)' }}>
+            <Lock size={13} /> Private
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="av-note-detail" style={{ maxWidth: '840px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ marginBottom: '8px' }}>
@@ -93,7 +128,10 @@ For each number \`num\` in the array, we calculate its complement \`diff = targe
       <div className="mono-card" style={{ padding: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px', marginBottom: '24px' }}>
           <div>
-            <h1 className="text-mono-title" style={{ margin: '0 0 12px', fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.02em' }}>{note.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              <h1 className="text-mono-title" style={{ margin: 0, fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.02em' }}>{note.title}</h1>
+              {renderVisibilityBadge(note.visibility)}
+            </div>
             <PatternTags tags={note.patternTags} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

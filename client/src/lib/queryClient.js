@@ -26,7 +26,11 @@ export const queryKeys = {
   sheets: ['sheets', 'list'],
   sheet: (id) => ['sheets', 'detail', id],
   dashboardSummary: ['dashboard', 'summary'],
+  activityHeatmap: (params) => ['dashboard', 'activityHeatmap', params ?? {}],
+  submissions: (query) => ['submissions', 'list', query ?? {}],
   cfStats: ['cf', 'stats'],
   adminTags: ['admin', 'tags'],
   adminReports: ['admin', 'reports'],
+  folderTree: ['folders', 'tree'],
+  file: (id) => ['files', 'detail', id],
 };

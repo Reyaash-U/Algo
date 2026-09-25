@@ -9,6 +9,8 @@ import {
   updateSheetItem,
 } from '../services/sheetService.js';
 import { forkSheet } from '../services/forkService.js';
+import { forkSheetFromGithub } from '../services/githubSheetService.js';
+import { ApiError } from '../utils/apiError.js';
 
 export const list = asyncHandler(async (req, res) => {
   const items = await listSheets(req.user.id);
@@ -49,5 +51,14 @@ export const updateItem = asyncHandler(async (req, res) => {
 
 export const fork = asyncHandler(async (req, res) => {
   const sheet = await forkSheet(req.resource.id, req.user.id);
+  res.status(201).json(ok(toSheetDTO(sheet)));
+});
+
+export const forkGithub = asyncHandler(async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    throw ApiError.badRequest('GitHub URL is required');
+  }
+  const sheet = await forkSheetFromGithub(req.user.id, url.trim());
   res.status(201).json(ok(toSheetDTO(sheet)));
 });

@@ -2,9 +2,11 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
 import { useState, useRef, useEffect } from 'react';
+import { Settings } from 'lucide-react';
 
 const NAV_LINKS = [
   { to: '/vault', label: 'Vault' },
+  { to: '/folders', label: 'Folders' },
   { to: '/revise', label: 'Revise' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/sheets', label: 'Sheets' },
@@ -148,12 +150,41 @@ export function Navbar() {
             )}
           </button>
 
-          {/* User Display Info & Log out button */}
+          {/* User Display Info & Settings & Log out button */}
           {isAuthenticated ? (
-            <div className="hidden md:flex items-center gap-3">
-              <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                {user?.displayName}
-              </span>
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                to="/settings"
+                className="flex items-center gap-2 no-underline px-2.5 py-1.5 rounded-full transition-all hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                title="Account Settings"
+              >
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    background: theme === 'light' ? '#e4e4e7' : '#27272a',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.72rem',
+                    fontWeight: 750,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    (user?.displayName || 'U').slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <span className={`text-xs font-semibold ${theme === 'light' ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                  {user?.displayName}
+                </span>
+                <Settings size={14} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
+              </Link>
               <button
                 onClick={handleLogout}
                 className="btn-mono-secondary"
@@ -231,6 +262,18 @@ export function Navbar() {
                 Admin
               </Link>
             )}
+
+            <Link
+              to="/settings"
+              onClick={() => setIsOpen(false)}
+              className={`no-underline text-sm font-semibold px-4 py-2.5 rounded-full transition-all ${
+                location.pathname.startsWith('/settings')
+                  ? (theme === 'light' ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-950')
+                  : (theme === 'light' ? 'hover:bg-zinc-100 text-zinc-500' : 'hover:bg-zinc-900 text-zinc-400')
+              }`}
+            >
+              Settings
+            </Link>
             
             <div className={`mt-3 pt-3 border-t flex flex-col gap-3 px-4 ${
               theme === 'light' ? 'border-zinc-100' : 'border-zinc-800'
