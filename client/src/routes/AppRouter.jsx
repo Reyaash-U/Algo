@@ -5,6 +5,7 @@ import { useTheme } from '../lib/themeContext.jsx';
 
 // Feature pages — placeholders now, each feature dev fills theirs in.
 import { AuthPage } from '../features/auth/AuthPage.jsx';
+import { SignUpPage } from '../features/auth/SignUpPage.jsx';
 import { VaultPage } from '../features/vault/VaultPage.jsx';
 import { NoteDetailPage } from '../features/vault/NoteDetailPage.jsx';
 import { NoteFormPage } from '../features/vault/NoteFormPage.jsx';
@@ -26,6 +27,8 @@ export function AppRouter() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/vault" element={<VaultPage />} />

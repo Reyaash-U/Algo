@@ -193,13 +193,25 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <Link
-              to="/auth"
-              className="btn-mono-primary"
-              style={{ padding: '6px 16px', borderRadius: '9999px', fontSize: '0.75rem', textDecoration: 'none' }}
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className={`no-underline text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer border flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'border-zinc-300 text-zinc-700 hover:text-black hover:bg-zinc-100 hover:border-zinc-400'
+                    : 'border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-900 hover:border-zinc-700'
+                }`}
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="btn-mono-primary"
+                style={{ padding: '6px 14px', borderRadius: '9999px', fontSize: '0.75rem', textDecoration: 'none' }}
+              >
+                Sign Up
+              </Link>
+            </div>
           )}
 
           {/* Hamburger Mobile Menu Toggle */}
