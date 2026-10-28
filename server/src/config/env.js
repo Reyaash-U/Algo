@@ -32,7 +32,7 @@ export const env = {
   // "http://localhost:5173,https://algovault.vercel.app"
   CLIENT_ORIGINS: (process.env.CLIENT_ORIGIN ?? 'http://localhost:5173')
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, '')) // browsers send origins without a trailing slash
     .filter(Boolean),
 
   // Feature flag: when true, unimplemented endpoints return mock data.
