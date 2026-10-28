@@ -15,6 +15,11 @@ export const ENDPOINTS = Object.freeze({
     refresh:  { method: 'POST', path: '/auth/refresh',  auth: 'none' },
     logout:   { method: 'POST', path: '/auth/logout',   auth: 'user' },
     me:       { method: 'GET',  path: '/auth/me',       auth: 'user' },
+    updateMe: { method: 'PATCH', path: '/auth/me',      auth: 'user' },
+    google:   { method: 'POST', path: '/auth/google',   auth: 'none', rateLimit: 'auth' },
+    verifyEmail:        { method: 'POST', path: '/auth/verify-email',        auth: 'none', rateLimit: 'auth' },
+    resendVerification: { method: 'POST', path: '/auth/resend-verification', auth: 'user', rateLimit: 'auth' },
+    updateProfile: { method: 'PATCH', path: '/auth/profile', auth: 'user' },
   },
 
   // ---- Notes ----
@@ -49,8 +54,11 @@ export const ENDPOINTS = Object.freeze({
     get:        { method: 'GET',    path: '/sheets/:id',                auth: 'user' },
     update:     { method: 'PATCH',  path: '/sheets/:id',                auth: 'user' },
     remove:     { method: 'DELETE', path: '/sheets/:id',                auth: 'user' },
+    addItem:    { method: 'POST',   path: '/sheets/:id/items',          auth: 'user' },
     updateItem: { method: 'PATCH',  path: '/sheets/:id/items/:itemId',  auth: 'user' },
+    removeItem: { method: 'DELETE', path: '/sheets/:id/items/:itemId',  auth: 'user' },
     fork:       { method: 'POST',   path: '/sheets/:id/fork',           auth: 'user' },
+    forkGithub: { method: 'POST',   path: '/sheets/fork-github',        auth: 'user' },
     report:     { method: 'POST',   path: '/sheets/:id/report',         auth: 'user' },
   },
 
@@ -61,6 +69,11 @@ export const ENDPOINTS = Object.freeze({
   },
   dashboard: {
     summary: { method: 'GET', path: '/dashboard/summary', auth: 'user' },
+    activityHeatmap: { method: 'GET', path: '/dashboard/activity-heatmap', auth: 'user' },
+  },
+  submissions: {
+    list:   { method: 'GET',  path: '/submissions', auth: 'user' },
+    create: { method: 'POST', path: '/submissions', auth: 'user' },
   },
   search: {
     query: { method: 'GET', path: '/search', auth: 'user' },
@@ -69,6 +82,7 @@ export const ENDPOINTS = Object.freeze({
   // ---- Admin ----
   admin: {
     listTags:   { method: 'GET',    path: '/admin/tags',       auth: 'admin' },
+    tagUsage:   { method: 'GET',    path: '/admin/tags/:id/usage', auth: 'admin' },
     createTag:  { method: 'POST',   path: '/admin/tags',       auth: 'admin' },
     deleteTag:     { method: 'DELETE', path: '/admin/tags/:id',    auth: 'admin' },
     reports:       { method: 'GET',    path: '/admin/reports',     auth: 'admin' },

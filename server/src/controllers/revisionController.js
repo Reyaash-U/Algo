@@ -14,7 +14,7 @@ export const enroll = asyncHandler(async (req, res) => {
 });
 
 export const due = asyncHandler(async (req, res) => {
-  const items = await getDueRevisions(req.user.id);
+  const items = await getDueRevisions(req.user.id, { all: req.query?.all === 'true' });
   res.status(200).json(
     ok({
       items: items.map(toRevisionDTO),
@@ -24,7 +24,7 @@ export const due = asyncHandler(async (req, res) => {
 });
 
 export const review = asyncHandler(async (req, res) => {
-  const revision = await submitReview(req.params.id, req.body?.rating);
+  const revision = await submitReview(req.user.id, req.params.id, req.body?.rating);
   res.status(200).json(ok(toRevisionDTO(revision)));
 });
 

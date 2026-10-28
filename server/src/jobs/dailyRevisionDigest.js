@@ -1,16 +1,23 @@
 import { prisma } from '../config/db.js';
+import { env } from '../config/env.js';
 import { sendEmail } from '../utils/mailer.js';
+import { isDigestDue, isIdle, buildDigestEmail } from '../utils/digestSchedule.js';
 
 /**
- * Daily cron job to email users a digest of their due revisions.
- * Queries users with pending revisions where nextReviewAt <= now,
- * and sends one email per user listing their due notes.
+ * Hourly cron job (see jobs/index.js) that emails users their due revisions.
+ *
+ * Each user chooses whether they want it (digestEnabled), the local hour
+ * (digestHour) and their timezone. A user gets at most one digest per local
+ * day, sent by the first hourly run at or after their hour — so a run missed
+ * by a sleeping host is caught up on the next one. Users with no activity for
+ * 30 days are skipped.
  */
 export async function dailyRevisionDigest() {
   const now = new Date();
   const batchSize = 100;
   let lastId = null;
   let sentCount = 0;
+  let skippedCount = 0;
   let failCount = 0;
 
   console.log(`[cron] Starting dailyRevisionDigest at ${now.toISOString()}`);
@@ -21,74 +28,53 @@ export async function dailyRevisionDigest() {
       const users = await prisma.user.findMany({
         where: {
           ...(lastId ? { id: { gt: lastId } } : {}),
+          digestEnabled: true,
+          emailVerified: true,
           revisions: {
-            some: {
-              nextReviewAt: { lte: now },
-              note: { deletedAt: null },
-            },
+            some: { nextReviewAt: { lte: now }, note: { deletedAt: null } },
           },
         },
         include: {
           revisions: {
-            where: {
-              nextReviewAt: { lte: now },
-              note: { deletedAt: null },
-            },
-            include: {
-              note: {
-                select: {
-                  title: true,
-                },
-              },
-            },
+            where: { nextReviewAt: { lte: now }, note: { deletedAt: null } },
+            include: { note: { select: { title: true } } },
           },
         },
         orderBy: { id: 'asc' },
         take: batchSize,
       });
 
-      if (users.length === 0) {
-        break;
-      }
+      if (users.length === 0) break;
 
       for (const user of users) {
-        const dueCount = user.revisions.length;
-        if (dueCount === 0) {
-          lastId = user.id;
+        lastId = user.id;
+
+        if (!isDigestDue(user, now) || isIdle(user, now) || user.revisions.length === 0) {
+          skippedCount++;
           continue;
         }
 
         try {
-          const subject = `${dueCount} ${dueCount === 1 ? 'problem' : 'problems'} due today`;
-          const text = `Hi ${user.displayName},\n\nYou have ${dueCount} revision ${dueCount === 1 ? 'item' : 'items'} due today on AlgoVault:\n\n` +
-            user.revisions.map((r) => `- ${r.note?.title ?? 'Untitled Note'}`).join('\n') +
-            `\n\nHappy practicing!\n- The AlgoVault Team`;
-
-          const html = `<p>Hi ${user.displayName},</p>` +
-            `<p>You have <strong>${dueCount}</strong> revision ${dueCount === 1 ? 'item' : 'items'} due today on AlgoVault:</p>` +
-            `<ul>` +
-            user.revisions.map((r) => `<li>${r.note?.title ?? 'Untitled Note'}</li>`).join('') +
-            `</ul>` +
-            `<p>Happy practicing!<br>- The AlgoVault Team</p>`;
-
-          await sendEmail({
-            to: user.email,
-            subject,
-            text,
-            html,
+          const email = buildDigestEmail({
+            displayName: user.displayName,
+            titles: user.revisions.map((r) => r.note?.title),
+            appUrl: env.APP_URL,
           });
+          const result = await sendEmail({ to: user.email, ...email });
 
+          // A mock send (no SMTP configured) delivered nothing, so don't mark it sent.
+          if (!result?.mock) {
+            await prisma.user.update({ where: { id: user.id }, data: { lastDigestAt: now } });
+          }
           sentCount++;
         } catch (err) {
-          console.error(`[cron] Failed to send daily digest email to user ${user.id} (${user.email}):`, err);
+          console.error(`[cron] Failed to send daily digest email to user ${user.id}:`, err);
           failCount++;
         }
-
-        lastId = user.id;
       }
     }
 
-    console.log(`[cron] dailyRevisionDigest complete. Sent: ${sentCount}, Failed: ${failCount}`);
+    console.log(`[cron] dailyRevisionDigest complete. Sent: ${sentCount}, Skipped: ${skippedCount}, Failed: ${failCount}`);
   } catch (err) {
     console.error(`[cron] Critical error in dailyRevisionDigest job:`, err);
   }

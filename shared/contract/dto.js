@@ -151,3 +151,35 @@ export function mockReport(over = {}) {
   };
 }
 
+// ---------- Submission ----------
+export function mockSubmission(over = {}) {
+  return {
+    id: id('sub'),
+    userId: id('usr'),
+    problemId: id('prob'),
+    noteId: null,
+    status: 'accepted',
+    language: 'python',
+    code: 'def solve(): pass',
+    submittedAt: now(),
+    createdAt: now(),
+    updatedAt: now(),
+    ...over,
+  };
+}
+
+// ---------- Activity Heatmap ----------
+export function mockActivityHeatmap(over = {}) {
+  const to = new Date().toISOString().slice(0, 10);
+  const fromDate = new Date(Date.now() - 365 * 86400000);
+  const from = fromDate.toISOString().slice(0, 10);
+  return {
+    from,
+    to,
+    total: 0,
+    days: [],
+    ...over,
+  };
+}
+
+
