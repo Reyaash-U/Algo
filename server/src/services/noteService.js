@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { ApiError } from '../utils/apiError.js';
 import { stripDangerous } from '../utils/sanitize.js';
+import { createSubmission } from './submissionService.js';
 import { enrollNote } from './revisionServiceDb.js';
 
 const DEFAULT_PAGE = 1;
@@ -17,12 +18,21 @@ export async function listNotes(userId, query = {}) {
     deletedAt: null,
   };
 
-  if (query.visibility) where.visibility = query.visibility;
-  if (query.tag) where.patternTags = { has: query.tag };
-  if (query.q) {
+  if (query.visibility && query.visibility !== 'all') {
+    where.visibility = query.visibility;
+  }
+  if (query.tag && query.tag.trim()) {
+    const rawTag = query.tag.trim();
+    const tagLower = rawTag.toLowerCase();
+    const tagKebab = tagLower.replace(/\s+/g, '-');
+    const variations = Array.from(new Set([rawTag, tagLower, tagKebab]));
+    where.patternTags = { hasSome: variations };
+  }
+  if (query.q && query.q.trim()) {
+    const q = query.q.trim();
     where.OR = [
-      { title: { contains: query.q, mode: 'insensitive' } },
-      { contentMarkdown: { contains: query.q, mode: 'insensitive' } },
+      { title: { contains: q, mode: 'insensitive' } },
+      { contentMarkdown: { contains: q, mode: 'insensitive' } },
     ];
   }
 
@@ -62,7 +72,14 @@ export async function createNote(userId, data = {}) {
 
   // Every new note enters the spaced-repetition queue immediately — this is
   // what keeps /revisions/due from being permanently empty.
-  await enrollNote(userId, note.id);
+  await enrollNote(userId, note.id).catch(() => null);
+
+  await createSubmission(userId, {
+    problemId: note.problemId ?? null,
+    noteId: note.id,
+    status: 'accepted',
+    submittedAt: note.createdAt,
+  }).catch(() => null);
 
   return note;
 }
@@ -107,7 +124,7 @@ export async function updateNote(id, data = {}) {
       ...(data.patternTags !== undefined ? { patternTags: data.patternTags } : {}),
       ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
       ...(data.confidence !== undefined ? { confidence: data.confidence } : {}),
-      ...versionsPatch,
+      ...(data.versions !== undefined ? { versions: data.versions } : versionsPatch),
     },
   });
 }

@@ -7,8 +7,8 @@ function getTransporter() {
   if (!transporter) {
     const config = {
       host: env.SMTP_HOST || 'localhost',
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true', // true for port 465, false for 587
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE, // true for port 465, false for 587
       auth: {
         user: env.SMTP_USER || '',
         pass: env.SMTP_PASS || '',
@@ -21,7 +21,8 @@ function getTransporter() {
 
 /**
  * Sends an email using the SMTP settings from the environment.
- * If SMTP settings are missing, logs the email to the console (mock send).
+ * If SMTP settings are missing, logs the email to the console (mock send)
+ * and returns `{ mock: true }` so callers know nothing was delivered.
  *
  * @param {object} options
  * @param {string} options.to
@@ -37,7 +38,7 @@ To: ${to}
 Subject: ${subject}
 Text: ${text}
 --------------------`);
-    return { messageId: 'mock-id' };
+    return { messageId: 'mock-id', mock: true };
   }
 
   const mailOptions = {

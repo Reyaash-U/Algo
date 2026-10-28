@@ -8,6 +8,12 @@ export function toUserDTO(row) {
     displayName: row.displayName,
     role: row.role,
     cfHandle: row.cfHandle,
-    createdAt: row.createdAt.toISOString(),
+    avatarUrl: row.avatarUrl || null,
+    bio: row.bio || '',
+    emailVerified: row.emailVerified ?? true,
+    digestEnabled: row.digestEnabled ?? true,
+    digestHour: row.digestHour ?? 8,
+    timezone: row.timezone || 'UTC',
+    createdAt: row.createdAt ? (row.createdAt.toISOString ? row.createdAt.toISOString() : row.createdAt) : null,
   };
 }

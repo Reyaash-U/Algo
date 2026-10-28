@@ -3,6 +3,7 @@ export function toRevisionDTO(row) {
     id: row.id,
     userId: row.userId,
     noteId: row.noteId,
+    problemId: row.note?.problemId || null,
     noteTitle: row.note?.title,
     patternTags: row.note?.patternTags || [],
     contentMarkdown: row.note?.contentMarkdown || '',

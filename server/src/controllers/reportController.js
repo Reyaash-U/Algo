@@ -59,19 +59,42 @@ export const createSheetReport = asyncHandler(async (req, res) => {
 });
 
 export const listReports = asyncHandler(async (req, res) => {
-  const reports = await prisma.report.findMany({
-    where: { status: 'open' },
-    include: {
-      reporter: {
-        select: {
-          id: true,
-          email: true,
-          displayName: true,
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
+  const skip = (page - 1) * limit;
+
+  const where = {};
+  const statusParam = req.query.status ?? 'open';
+  if (statusParam && statusParam !== 'all') {
+    where.status = statusParam;
+  }
+
+  const targetTypeParam = req.query.targetType;
+  if (targetTypeParam && targetTypeParam !== 'all') {
+    where.targetType = targetTypeParam;
+  }
+
+  const sortParam = req.query.sort === 'asc' ? 'asc' : 'desc';
+  const orderBy = { createdAt: sortParam };
+
+  const [reports, total] = await Promise.all([
+    prisma.report.findMany({
+      where,
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.report.count({ where }),
+  ]);
 
   const noteIds = reports.filter((r) => r.targetType === 'note').map((r) => r.targetId);
   const sheetIds = reports.filter((r) => r.targetType === 'sheet').map((r) => r.targetId);
@@ -112,7 +135,17 @@ export const listReports = asyncHandler(async (req, res) => {
     };
   });
 
-  res.status(200).json(ok({ reports: items }));
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  res.status(200).json(
+    ok({
+      reports: items,
+      total,
+      page,
+      limit,
+      totalPages,
+    }),
+  );
 });
 
 export const resolveReport = asyncHandler(async (req, res) => {

@@ -29,7 +29,8 @@ export function refreshCookieOptions() {
   return {
     httpOnly: true,
     secure: env.NODE_ENV !== 'development',
-    sameSite: 'strict',
+    // 'none' requires Secure, which is on in any non-development environment.
+    sameSite: env.COOKIE_SAMESITE,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/api/auth',
   };

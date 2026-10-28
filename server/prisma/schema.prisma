@@ -35,18 +35,28 @@ model User {
   displayName          String
   role                 String    @default("user") // ROLES.USER | ROLES.ADMIN
   cfHandle             String?
+  avatarUrl            String?
+  bio                  String?
   streakCurrent        Int       @default(0)
   streakLongest        Int       @default(0)
   streakLastActiveDate DateTime?
   refreshTokenVersion  Int       @default(0) // bump to invalidate all refresh tokens
+  digestEnabled        Boolean   @default(true)  // daily revision-digest email opt-out
+  digestHour           Int       @default(8)     // local hour (0-23) to send it
+  timezone             String    @default("UTC") // IANA tz used for digestHour
+  lastDigestAt         DateTime?
+  emailVerified        Boolean   @default(false) // reminders are only sent to verified addresses
+  emailVerifyTokenHash String?   // sha256 of the emailed token
+  emailVerifyExpiresAt DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  notes     Note[]
-  sheets    Sheet[]
-  revisions Revision[]
-  cfStats   CfStats?
-  reports   Report[]
+  notes       Note[]
+  sheets      Sheet[]
+  revisions   Revision[]
+  cfStats     CfStats?
+  reports     Report[]
+  submissions Submission[]
 
   @@map("users")
 }
@@ -64,8 +74,9 @@ model Problem {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  notes      Note[]
-  sheetItems SheetItem[]
+  notes       Note[]
+  sheetItems  SheetItem[]
+  submissions Submission[]
 
   @@unique([platform, externalId])
   @@map("problems")
@@ -93,7 +104,8 @@ model Note {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  revisions Revision[]
+  revisions   Revision[]
+  submissions Submission[]
 
   @@index([ownerId])
   @@index([patternTags])
@@ -200,4 +212,23 @@ model Report {
   @@map("reports")
 }
 
+// ── Submission ─────────────────────────────────────────────────────────────
+model Submission {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId   String?
+  problem     Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  noteId      String?
+  note        Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  status      String   @default("accepted") // "accepted" | "attempted" | "reviewed"
+  language    String?
+  code        String?  @default("")
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  @@index([userId, submittedAt])
+  @@index([submittedAt])
+  @@map("submissions")
+}
