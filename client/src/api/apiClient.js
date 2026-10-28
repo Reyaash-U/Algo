@@ -64,6 +64,9 @@ export const api = {
     refresh: () => call(ENDPOINTS.auth.refresh),
     logout: () => call(ENDPOINTS.auth.logout),
     me: () => call(ENDPOINTS.auth.me),
+    google: (credential) => call(ENDPOINTS.auth.google, { body: { credential } }),
+    verifyEmail: (token) => call(ENDPOINTS.auth.verifyEmail, { body: { token } }),
+    resendVerification: () => call(ENDPOINTS.auth.resendVerification),
     updateMe: (body) => call(ENDPOINTS.auth.updateMe, { body }),
     updateProfile: (body) =>
       call(ENDPOINTS?.auth?.updateProfile ?? { method: 'PATCH', path: '/auth/profile' }, { body }),

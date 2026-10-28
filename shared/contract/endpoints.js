@@ -16,6 +16,9 @@ export const ENDPOINTS = Object.freeze({
     logout:   { method: 'POST', path: '/auth/logout',   auth: 'user' },
     me:       { method: 'GET',  path: '/auth/me',       auth: 'user' },
     updateMe: { method: 'PATCH', path: '/auth/me',      auth: 'user' },
+    google:   { method: 'POST', path: '/auth/google',   auth: 'none', rateLimit: 'auth' },
+    verifyEmail:        { method: 'POST', path: '/auth/verify-email',        auth: 'none', rateLimit: 'auth' },
+    resendVerification: { method: 'POST', path: '/auth/resend-verification', auth: 'user', rateLimit: 'auth' },
     updateProfile: { method: 'PATCH', path: '/auth/profile', auth: 'user' },
   },
 

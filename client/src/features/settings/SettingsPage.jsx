@@ -47,6 +47,9 @@ export function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
   const [customAvatarInput, setCustomAvatarInput] = useState('');
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [digestHour, setDigestHour] = useState(8);
+  const [timezone, setTimezone] = useState('UTC');
   const [errors, setErrors] = useState({});
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -57,6 +60,9 @@ export function SettingsPage() {
       setAvatarUrl(currentUser.avatarUrl || '');
       setBio(currentUser.bio || '');
       setCustomAvatarInput(currentUser.avatarUrl || '');
+      setDigestEnabled(currentUser.digestEnabled ?? true);
+      setDigestHour(currentUser.digestHour ?? 8);
+      setTimezone(currentUser.timezone || 'UTC');
     }
   }, [currentUser]);
 
@@ -107,6 +113,12 @@ export function SettingsPage() {
     },
   });
 
+  const resendMutation = useMutation({
+    mutationFn: () => api.auth.resendVerification(),
+    onSuccess: () => toast.push('Verification email sent — check your inbox.', { type: 'success' }),
+    onError: (err) => toast.push(err.message || 'Could not send verification email', { type: 'error' }),
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setSaveSuccess(false);
@@ -116,6 +128,9 @@ export function SettingsPage() {
       displayName: displayName.trim(),
       avatarUrl: avatarUrl ? avatarUrl.trim() : null,
       bio: bio ? bio.trim() : '',
+      digestEnabled,
+      digestHour,
+      timezone,
     });
   };
 
@@ -125,6 +140,9 @@ export function SettingsPage() {
       setAvatarUrl(currentUser.avatarUrl || '');
       setBio(currentUser.bio || '');
       setCustomAvatarInput(currentUser.avatarUrl || '');
+      setDigestEnabled(currentUser.digestEnabled ?? true);
+      setDigestHour(currentUser.digestHour ?? 8);
+      setTimezone(currentUser.timezone || 'UTC');
     }
     setErrors({});
     setSaveSuccess(false);
@@ -457,6 +475,55 @@ export function SettingsPage() {
           )}
         </div>
 
+        {/* Section 3b: Daily revision reminder email */}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 650, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Mail size={14} /> Daily Revision Reminder
+          </span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+            <input type="checkbox" checked={digestEnabled} onChange={(e) => setDigestEnabled(e.target.checked)} />
+            Email me when notes are due for revision
+          </label>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', opacity: digestEnabled ? 1 : 0.5 }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Send at{' '}
+              <select
+                value={digestHour}
+                disabled={!digestEnabled}
+                onChange={(e) => setDigestHour(parseInt(e.target.value, 10))}
+                style={{ marginLeft: '6px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)' }}
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Time zone{' '}
+              <input
+                type="text"
+                value={timezone}
+                disabled={!digestEnabled}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="e.g. Asia/Kolkata"
+                style={{ marginLeft: '6px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', width: '180px' }}
+              />
+            </label>
+            <button
+              type="button"
+              className="btn-mono-secondary"
+              disabled={!digestEnabled}
+              onClick={() => setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+            >
+              Use my browser's time zone
+            </button>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            One email per day at your chosen time. Reminders pause automatically after 30 days of inactivity.
+          </p>
+        </div>
+
         {/* Section 4: Read-Only Account Details */}
         <div
           style={{
@@ -478,13 +545,24 @@ export function SettingsPage() {
                   fontSize: '0.68rem',
                   padding: '1px 6px',
                   borderRadius: '10px',
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  color: '#22c55e',
-                  border: '1px solid rgba(34, 197, 94, 0.25)',
+                  background: currentUser?.emailVerified === false ? 'rgba(245, 158, 11, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                  color: currentUser?.emailVerified === false ? '#f59e0b' : '#22c55e',
+                  border: currentUser?.emailVerified === false ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)',
                 }}
               >
-                Verified
+                {currentUser?.emailVerified === false ? 'Not verified' : 'Verified'}
               </span>
+              {currentUser?.emailVerified === false && (
+                <button
+                  type="button"
+                  className="btn-mono-secondary"
+                  disabled={resendMutation.isPending}
+                  onClick={() => resendMutation.mutate()}
+                  style={{ padding: '2px 10px', fontSize: '0.72rem' }}
+                >
+                  {resendMutation.isPending ? 'Sending…' : 'Resend verification email'}
+                </button>
+              )}
             </div>
           </div>
 

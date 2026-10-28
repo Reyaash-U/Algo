@@ -16,6 +16,7 @@ import { SheetDetailPage } from '../features/sheets/SheetDetailPage.jsx';
 import { ExplorePage } from '../features/explore/ExplorePage.jsx';
 import { AdminPage } from '../features/admin/AdminPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
+import { VerifyEmailPage } from '../features/auth/VerifyEmailPage.jsx';
 
 export function AppRouter() {
   const { theme } = useTheme();
@@ -30,6 +31,7 @@ export function AppRouter() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/signup" element={<AuthPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/vault" element={<VaultPage />} />

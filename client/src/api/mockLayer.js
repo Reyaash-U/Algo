@@ -28,6 +28,9 @@ export const mockHandlers = {
   'POST /auth/login': async () => ({ user: mockUser(), accessToken: 'mock-access-token' }),
   'POST /auth/refresh': async () => ({ user: mockUser(), accessToken: 'mock-access-token-2' }),
   'GET /auth/me': async () => ({ user: mockUser() }),
+  'POST /auth/google': async () => ({ user: mockUser(), accessToken: 'mock-access-token' }),
+  'POST /auth/verify-email': async () => ({ user: mockUser({ emailVerified: true }) }),
+  'POST /auth/resend-verification': async () => ({ sent: true }),
   'PATCH /auth/me': async (body) => ({ user: mockUser(body) }),
   'PATCH /auth/profile': async (body) => ({ user: mockUser(body || {}) }),
 

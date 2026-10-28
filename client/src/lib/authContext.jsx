@@ -44,6 +44,13 @@ export function AuthProvider({ children }) {
     return user;
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential) => {
+    const { user, accessToken } = await api.auth.google(credential);
+    setAccessToken(accessToken);
+    setUser(user);
+    return user;
+  }, []);
+
   const register = useCallback(async (email, password, displayName) => {
     const { user, accessToken } = await api.auth.register({ email, password, displayName });
     setAccessToken(accessToken);
@@ -64,7 +71,7 @@ export function AuthProvider({ children }) {
     setUser((prev) => (prev ? { ...prev, ...updatedUser } : updatedUser));
   }, []);
 
-  const value = { user, booted, isAuthenticated: !!user, login, register, logout, updateUser, setUser };
+  const value = { user, booted, isAuthenticated: !!user, login, loginWithGoogle, register, logout, updateUser, setUser };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
