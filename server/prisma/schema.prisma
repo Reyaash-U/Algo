@@ -35,6 +35,8 @@ model User {
   displayName          String
   role                 String    @default("user") // ROLES.USER | ROLES.ADMIN
   cfHandle             String?
+  lcHandle             String?
+  ccHandle             String?
   avatarUrl            String?
   bio                  String?
   streakCurrent        Int       @default(0)
@@ -55,6 +57,8 @@ model User {
   sheets      Sheet[]
   revisions   Revision[]
   cfStats     CfStats?
+  lcStats     LcStats?
+  ccStats     CcStats?
   reports     Report[]
   submissions Submission[]
 
@@ -188,6 +192,50 @@ model CfStats {
 }
 
 // ── Tag (curated reference list) ──────────────────────────────────────────
+// ── LcStats (LeetCode snapshot, refreshed by sync) ───────────────────────
+model LcStats {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle         String
+  ranking        Int      @default(0)
+  solved         Json     @default("{}") // {easy, medium, hard, total}
+  totals         Json     @default("{}") // platform totals {easy, medium, hard, total}
+  contest        Json?    // {rating, globalRanking, attended, topPercentage, badge}
+  contestHistory Json     @default("[]") // [{title, rating, ranking, at}]
+  topics         Json     @default("[]") // [{tag, solved}]
+  calendar       Json     @default("{}") // {"YYYY-MM-DD": submissions}
+  recent         Json     @default("[]") // [{id, title, slug, url, at}]
+  badges         Json     @default("[]") // [{name, icon}]
+  profile        Json     @default("{}") // {avatar, realName, country}
+  syncedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("lc_stats")
+}
+
+// ── CcStats (CodeChef snapshot, refreshed by sync) ───────────────────────
+model CcStats {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle         String
+  rating         Int?     // null when the user has never been rated
+  highestRating  Int?
+  stars          Int      @default(0)
+  division       String?  // "Div 1".."Div 4"
+  totalSolved    Int      @default(0)
+  contestHistory Json     @default("[]") // [{code, title, rating, rank, at}]
+  recent         Json     @default("[]") // [{problem, url, status, score, language, at, solutionUrl}]
+  profile        Json     @default("{}") // {name, avatar, country}
+  syncedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("cc_stats")
+}
+
 model Tag {
   name      String   @id
   createdAt DateTime @default(now())

@@ -45,7 +45,10 @@ export function ExplorePage() {
     onMutate: (id) => setForkingId(id),
     onSuccess: (newNote) => {
       setForkingId(null);
-      toast.push('Note forked to your Vault!', { type: 'success' });
+      toast.push(
+        newNote.alreadyForked ? 'You already forked this note. Opening your copy.' : 'Note forked to your Vault!',
+        { type: newNote.alreadyForked ? 'info' : 'success' },
+      );
       navigate(`/note/${newNote.id}`);
     },
     onError: (err) => {
@@ -59,7 +62,10 @@ export function ExplorePage() {
     onMutate: (id) => setForkingId(id),
     onSuccess: (newSheet) => {
       setForkingId(null);
-      toast.push('Sheet forked successfully!', { type: 'success' });
+      toast.push(
+        newSheet.alreadyForked ? 'You already forked this sheet. Opening your copy.' : 'Sheet forked successfully!',
+        { type: newSheet.alreadyForked ? 'info' : 'success' },
+      );
       navigate(`/sheets/${newSheet.id}`);
     },
     onError: (err) => {

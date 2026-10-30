@@ -11,10 +11,10 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-  resolve: {
-    // Allow importing the shared contract package from outside client/ root.
-    preserveSymlinks: true,
-  },
+  // No `preserveSymlinks`: the linked @algovault/shared workspace package must resolve to its
+  // real path (../shared). Kept as a node_modules path, Vite serves it like a third-party
+  // dependency with an immutable one-year cache, so edits to the shared API contract never
+  // reach the browser until its cache is cleared.
   optimizeDeps: {
     exclude: ['@algovault/shared'],
   },

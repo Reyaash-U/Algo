@@ -27,17 +27,13 @@ export async function getDueRevisions(userId, options = {}) {
   });
 
   if (userNotes.length > 0) {
-    for (const note of userNotes) {
-      await prisma.revision.upsert({
-        where: { userId_noteId: { userId, noteId: note.id } },
-        update: {},
-        create: {
-          userId,
-          noteId: note.id,
-          nextReviewAt: new Date(),
-        },
-      }).catch(() => null);
-    }
+    // One bulk insert instead of one upsert per note: each query is a round trip to the
+    // hosted database, so enrolling note by note made this page slower with every note.
+    // Notes that already have a revision are skipped (unique on userId + noteId).
+    await prisma.revision.createMany({
+      data: userNotes.map((note) => ({ userId, noteId: note.id, nextReviewAt: new Date() })),
+      skipDuplicates: true,
+    }).catch(() => null);
   }
 
   const endOfToday = new Date();

@@ -71,8 +71,9 @@ export const removeItem = asyncHandler(async (req, res) => {
 });
 
 export const fork = asyncHandler(async (req, res) => {
-  const sheet = await forkSheet(req.resource.id, req.user.id);
-  res.status(201).json(ok(toSheetDTO(sheet)));
+  const { sheet, created } = await forkSheet(req.resource.id, req.user.id);
+  // 201 for a new copy; 200 plus alreadyForked when the user already had one.
+  res.status(created ? 201 : 200).json(ok({ ...toSheetDTO(sheet), alreadyForked: !created }));
 });
 
 export const forkGithub = asyncHandler(async (req, res) => {

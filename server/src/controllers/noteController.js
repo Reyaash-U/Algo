@@ -40,6 +40,7 @@ export const remove = asyncHandler(async (req, res) => {
 });
 
 export const fork = asyncHandler(async (req, res) => {
-  const note = await forkNote(req.resource.id, req.user.id);
-  res.status(201).json(ok(toNoteDTO(note)));
+  const { note, created } = await forkNote(req.resource.id, req.user.id);
+  // 201 for a new copy; 200 plus alreadyForked when the user already had one.
+  res.status(created ? 201 : 200).json(ok({ ...toNoteDTO(note), alreadyForked: !created }));
 });

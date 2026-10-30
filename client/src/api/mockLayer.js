@@ -97,6 +97,21 @@ export const mockHandlers = {
 
   'POST /cf/sync': async () => mockCfStats(),
   'GET /cf/stats': async () => mockCfStats(),
+  'GET /cc/stats': async () => null,
+  'POST /cc/sync': async (body) => ({
+    handle: body?.username || 'demo', rating: 1650, highestRating: 1700, stars: 3, division: 'Div 3', totalSolved: 120,
+    contestHistory: [], recent: [], profile: { name: 'Demo', avatar: null, country: 'India' }, syncedAt: new Date().toISOString(),
+  }),
+  'DELETE /cc/disconnect': async () => ({ disconnected: true }),
+  'GET /lc/stats': async () => null,
+  'POST /lc/sync': async (body) => ({
+    handle: body?.username || 'demo', ranking: 123456,
+    solved: { easy: 80, medium: 60, hard: 10, total: 150 }, totals: { easy: 900, medium: 1900, hard: 850, total: 3650 },
+    contest: { rating: 1650, globalRanking: 50000, attended: 12, topPercentage: 20, badge: null },
+    contestHistory: [], topics: [{ tag: 'Array', solved: 60 }], calendar: {}, recent: [], badges: [],
+    profile: { avatar: null, realName: null, country: null }, syncedAt: new Date().toISOString(),
+  }),
+  'DELETE /lc/disconnect': async () => ({ disconnected: true }),
   'GET /dashboard/summary': async () => mockDashboardSummary(),
   'GET /dashboard/activity-heatmap': async () => mockActivityHeatmap(),
   'GET /submissions': async () => ({ items: [mockSubmission()], total: 1 }),

@@ -9,9 +9,19 @@ import { ApiError } from '../utils/apiError.js';
 // deletion is a soft delete (deletedAt set, row not removed), forkOfId can
 // keep pointing at a "deleted" note/sheet without a foreign-key violation —
 // that's the tombstone, GitHub-style.
+//
+// Forking someone else's note/sheet a second time does NOT make another copy or bump the
+// counter: it returns the copy you already have (`created: false`), so repeated clicks
+// can't inflate fork counts or clutter your vault. Forking your own item is a deliberate
+// duplicate, so that always creates a new copy. A copy you deleted can be forked again.
 export async function forkNote(originalId, userId) {
   const original = await prisma.note.findUnique({ where: { id: originalId } });
   if (!original) throw ApiError.notFound('note not found');
+
+  if (original.ownerId !== userId) {
+    const existing = await prisma.note.findFirst({ where: { ownerId: userId, forkOfId: originalId, deletedAt: null } });
+    if (existing) return { note: existing, created: false };
+  }
 
   const [forked] = await prisma.$transaction([
     prisma.note.create({
@@ -30,7 +40,7 @@ export async function forkNote(originalId, userId) {
     }),
   ]);
 
-  return forked;
+  return { note: forked, created: true };
 }
 
 export async function forkSheet(originalId, userId) {
@@ -39,6 +49,14 @@ export async function forkSheet(originalId, userId) {
     include: { items: { include: { problem: true } } },
   });
   if (!original) throw ApiError.notFound('sheet not found');
+
+  if (original.ownerId !== userId) {
+    const existing = await prisma.sheet.findFirst({
+      where: { ownerId: userId, forkOfId: originalId, deletedAt: null },
+      include: { items: { include: { problem: true } } },
+    });
+    if (existing) return { sheet: existing, created: false };
+  }
 
   const sheetTitle = original.ownerId === userId ? `${original.title} (Copy)` : original.title;
 
@@ -109,7 +127,7 @@ export async function forkSheet(originalId, userId) {
     }
   }
 
-  return forked;
+  return { sheet: forked, created: true };
 }
 
 function cloneJsonArray(value) {

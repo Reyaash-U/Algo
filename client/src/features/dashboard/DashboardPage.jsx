@@ -10,8 +10,10 @@ import { PatternHeatmap } from './components/PatternHeatmap.jsx';
 import { ConfidenceRadar } from './components/ConfidenceRadar.jsx';
 import { StalenessAlerts } from './components/StalenessAlerts.jsx';
 import { CodeforcesDashboard } from './components/CodeforcesDashboard.jsx';
+import { LeetCodeDashboard } from './components/LeetCodeDashboard.jsx';
+import { CodeChefDashboard } from './components/CodeChefDashboard.jsx';
 import { SettingsPage } from '../settings/SettingsPage.jsx';
-import { BarChart3, Flame, Zap, Trophy, Settings } from 'lucide-react';
+import { BarChart3, Flame, Zap, Trophy, Settings, Code2, ChefHat } from 'lucide-react';
 
 export function DashboardPage() {
   const { theme } = useTheme();
@@ -96,6 +98,50 @@ export function DashboardPage() {
 
         <button
           type="button"
+          onClick={() => setSearchParams({ tab: 'leetcode' })}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '8px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'leetcode' ? 'var(--text-primary)' : 'transparent',
+            color: activeTab === 'leetcode' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Code2 size={16} />
+          LeetCode Dashboard
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: 'codechef' })}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '8px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'codechef' ? 'var(--text-primary)' : 'transparent',
+            color: activeTab === 'codechef' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <ChefHat size={16} />
+          CodeChef Dashboard
+        </button>
+
+        <button
+          type="button"
           onClick={() => setSearchParams({ tab: 'overview' })}
           style={{
             padding: '8px 18px',
@@ -143,6 +189,12 @@ export function DashboardPage() {
       {activeTab === 'codeforces' && (
         <CodeforcesDashboard defaultHandle={authData?.user?.cfHandle} />
       )}
+
+      {/* Tab: CodeChef Dashboard */}
+      {activeTab === 'codechef' && <CodeChefDashboard />}
+
+      {/* Tab: LeetCode Dashboard */}
+      {activeTab === 'leetcode' && <LeetCodeDashboard />}
 
       {/* Tab 2: AlgoVault & Streaks */}
       {activeTab === 'overview' && (

@@ -8,6 +8,8 @@ export function toUserDTO(row) {
     displayName: row.displayName,
     role: row.role,
     cfHandle: row.cfHandle,
+    lcHandle: row.lcHandle ?? null,
+    ccHandle: row.ccHandle ?? null,
     avatarUrl: row.avatarUrl || null,
     bio: row.bio || '',
     emailVerified: row.emailVerified ?? true,
