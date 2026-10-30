@@ -121,6 +121,18 @@ export const api = {
     },
   },
 
+  lc: {
+    sync: (username) => call(ENDPOINTS.lc.sync, { body: { username } }),
+    stats: () => call(ENDPOINTS.lc.stats),
+    disconnect: () => call(ENDPOINTS.lc.disconnect),
+  },
+
+  cc: {
+    sync: (username) => call(ENDPOINTS.cc.sync, { body: { username } }),
+    stats: () => call(ENDPOINTS.cc.stats),
+    disconnect: () => call(ENDPOINTS.cc.disconnect),
+  },
+
   dashboard: {
     summary: () => call(ENDPOINTS.dashboard.summary),
     activityHeatmap: (query) => call(ENDPOINTS.dashboard.activityHeatmap, { query }),

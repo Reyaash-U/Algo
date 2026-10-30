@@ -13,23 +13,21 @@ import {
   X,
   Sparkles,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
+// Each preset was checked against the importer: the repository's README lists real problems
+// with LeetCode links, and the label matches what actually gets imported.
 const PRESET_GITHUB_SHEETS = [
   {
-    name: 'NeetCode 150',
-    description: '150 essential LeetCode coding interview questions categorized by algorithmic pattern.',
-    url: 'https://github.com/neetcode-gh/leetcode',
-  },
-  {
     name: 'Blind 75',
-    description: 'The standard 75 must-do interview questions covering all major core patterns.',
-    url: 'https://github.com/kamyu104/LeetCode-Solutions',
+    description: 'The 75 must-do interview questions covering all the major patterns.',
+    url: 'https://github.com/SwarajShelavale/LeetCode-Blind-75',
   },
   {
-    name: 'Striver SDE Sheet',
-    description: 'Curated 180 DSA questions for top product companies interview preparation.',
-    url: 'https://github.com/striver/sde-sheet',
+    name: 'NeetCode Solutions',
+    description: 'NeetCode.io solutions list, 450+ problems (the first 300 are imported).',
+    url: 'https://github.com/neetcode-gh/leetcode',
   },
 ];
 
@@ -331,6 +329,7 @@ export function SheetsPage() {
                     }}
                     required
                     autoFocus
+                    disabled={forkGithubMutation.isPending}
                   />
                 </div>
                 {urlError ? (
@@ -375,10 +374,18 @@ export function SheetsPage() {
                 </div>
               </div>
 
+              {forkGithubMutation.isPending && (
+                <p role="status" style={{ margin: '0 0 16px', fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RefreshCw size={14} className="animate-spin" />
+                  Importing problems and looking up their details. Large lists can take up to about 15 seconds, so please keep this open.
+                </p>
+              )}
+
               {/* Form Buttons */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button
                   type="button"
+                  disabled={forkGithubMutation.isPending}
                   onClick={() => setIsForkModalOpen(false)}
                   className="btn-mono-secondary"
                   style={{ padding: '9px 18px', fontSize: '0.88rem', fontWeight: 650 }}

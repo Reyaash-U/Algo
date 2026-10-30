@@ -1,6 +1,8 @@
 import cron from 'node-cron';
 import { dailyRevisionDigest } from './dailyRevisionDigest.js';
 import { cfAutoSync } from './cfAutoSync.js';
+import { lcAutoSync } from './lcAutoSync.js';
+import { ccAutoSync } from './ccAutoSync.js';
 import { env, isDev } from '../config/env.js';
 
 // All scheduled jobs registered in one place. They run in-process, so the
@@ -20,5 +22,9 @@ export function registerCronJobs() {
   cron.schedule('0 * * * *', dailyRevisionDigest);
   // 03:00 daily — refresh Codeforces stats for users with a handle.
   cron.schedule('0 3 * * *', cfAutoSync);
+  // 03:30 daily — refresh LeetCode stats for users with a username.
+  cron.schedule('30 3 * * *', lcAutoSync);
+  // 03:45 daily — refresh CodeChef stats for users with a username.
+  cron.schedule('45 3 * * *', ccAutoSync);
   console.log('[cron] jobs registered');
 }

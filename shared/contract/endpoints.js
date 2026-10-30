@@ -67,6 +67,16 @@ export const ENDPOINTS = Object.freeze({
     sync:  { method: 'POST', path: '/cf/sync',  auth: 'user', rateLimit: 'resolve' },
     stats: { method: 'GET',  path: '/cf/stats', auth: 'user' },
   },
+  lc: {
+    sync:       { method: 'POST',   path: '/lc/sync',       auth: 'user', rateLimit: 'resolve' },
+    stats:      { method: 'GET',    path: '/lc/stats',      auth: 'user' },
+    disconnect: { method: 'DELETE', path: '/lc/disconnect', auth: 'user' },
+  },
+  cc: {
+    sync:       { method: 'POST',   path: '/cc/sync',       auth: 'user', rateLimit: 'resolve' },
+    stats:      { method: 'GET',    path: '/cc/stats',      auth: 'user' },
+    disconnect: { method: 'DELETE', path: '/cc/disconnect', auth: 'user' },
+  },
   dashboard: {
     summary: { method: 'GET', path: '/dashboard/summary', auth: 'user' },
     activityHeatmap: { method: 'GET', path: '/dashboard/activity-heatmap', auth: 'user' },
