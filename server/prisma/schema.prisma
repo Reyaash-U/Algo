@@ -99,6 +99,8 @@ model Note {
   patternTags     String[]  @default([])
   visibility      String    @default("private") // VISIBILITY.*
   confidence      Int       @default(3) // self-rated 1..5
+  keyInsight      String?   // one-line "main trick" the student wants to recall at revision time
+  edgeCase        String?   // one-line "gotcha" the student wants to remember
   forkOfId        String?
   forkOf          Note?     @relation("NoteForks", fields: [forkOfId], references: [id], onDelete: SetNull)
   forks           Note[]    @relation("NoteForks")

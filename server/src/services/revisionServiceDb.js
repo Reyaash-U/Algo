@@ -55,7 +55,29 @@ export async function getDueRevisions(userId, options = {}) {
   });
 }
 
-export async function submitReview(userId, revisionId, rating) {
+// Loads a user's revision by either its own id or its note id, including the note and
+// the linked problem — shared between the review and the MCQ-generation endpoints so
+// the ownership rules only live in one place. Returns null when the id matches nothing
+// the user owns; throws a 404 only when the caller insists on an id.
+export async function findOwnedRevision(userId, idOrNoteId, { throwIfMissing = true } = {}) {
+  let revision = await prisma.revision.findUnique({
+    where: { id: idOrNoteId },
+    include: { note: { include: { problem: true } } },
+  });
+  if (!revision) {
+    revision = await prisma.revision.findFirst({
+      where: { noteId: idOrNoteId, userId },
+      include: { note: { include: { problem: true } } },
+    });
+  }
+  if (!revision || revision.userId !== userId) {
+    if (throwIfMissing) throw ApiError.notFound('Revision not found');
+    return null;
+  }
+  return revision;
+}
+
+export async function submitReview(userId, revisionId, rating, extra = {}) {
   const normalizedRating = normalizeRating(rating);
   let revision = await prisma.revision.findUnique({
     where: { id: revisionId },
@@ -102,6 +124,18 @@ export async function submitReview(userId, revisionId, rating) {
     reviewedAt: reviewedAt.toISOString(),
     intervalAfter: nextState.intervalDays,
     easeAfter: nextState.easeFactor,
+    // When the client ran an MCQ quiz it can send a sanitised result to be stored
+    // alongside the rating, so the history records how the rating was reached.
+    ...(extra?.mcqResult && typeof extra.mcqResult === 'object'
+      ? {
+          mode: 'quiz',
+          mcqResult: {
+            total: Number(extra.mcqResult.total) || 0,
+            correct: Number(extra.mcqResult.correct) || 0,
+            confidentEasy: !!extra.mcqResult.confidentEasy,
+          },
+        }
+      : {}),
   };
 
   const [updated] = await Promise.all([

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
 import { SkeletonCard } from '../../components/shared/Skeleton.jsx';
@@ -8,11 +8,16 @@ import { useToast } from '../../components/shared/Toast.jsx';
 import { useTheme } from '../../lib/themeContext.jsx';
 import { Brain, Zap, Lock, CheckCircle2, RotateCw, BookOpen, Plus, Sparkles, Clock, LogOut } from 'lucide-react';
 import { RevisionSummaryScreen, formatTimeSpent } from './components/RevisionSummaryScreen.jsx';
+import { RevisionQuiz } from './components/RevisionQuiz.jsx';
 
 export function RevisePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [practiceMode, setPracticeMode] = useState(false);
+  // Quiz-first flow: students see the MCQ quiz before the solution is revealed.
+  // "Skip" and auto-rate (completing the quiz) both set this to true so the
+  // existing reveal-and-rate UI takes over as the fallback / final confirmation.
+  const [quizSkipped, setQuizSkipped] = useState(false);
 
   // Session stats & wall-clock timer (prevents any fast-ticking / drift)
   const startTimeRef = useRef(Date.now());
@@ -21,6 +26,11 @@ export function RevisePage() {
   const [isSessionComplete, setIsSessionComplete] = useState(false);
   const [sessionReviewed, setSessionReviewed] = useState([]);
   const [initialQueueCount, setInitialQueueCount] = useState(null);
+
+  // Deep-link into a specific due note from the summary screen's "still to review" list:
+  // ?noteId=XXX jumps straight to that card and reopens the quiz if the summary was shown.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusNoteId = searchParams.get('noteId');
 
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -64,9 +74,26 @@ export function RevisePage() {
     }
   }, [items.length, currentIndex]);
 
+  // If the URL carries ?noteId=XXX (set by the summary screen's "still to review" links),
+  // jump straight to that card and re-open the quiz, so the user can revise it right away
+  // instead of being left on the summary. The query param is cleared after focusing so a
+  // page refresh won't keep forcing the same card.
+  useEffect(() => {
+    if (!focusNoteId || items.length === 0) return;
+    const idx = items.findIndex((it) => it.noteId === focusNoteId || it.id === focusNoteId);
+    if (idx === -1) return;
+    setCurrentIndex(idx);
+    setIsSessionComplete(false);
+    setSessionActive(true);
+    setShowAnswer(false);
+    setQuizSkipped(false);
+    searchParams.delete('noteId');
+    setSearchParams(searchParams, { replace: true });
+  }, [focusNoteId, items, searchParams, setSearchParams]);
+
   const rateMutation = useMutation({
-    mutationFn: ({ id, rating, card }) =>
-      api.revisions.review(id, rating).then((res) => ({ res, rating, card })),
+    mutationFn: ({ id, rating, card, mcqResult }) =>
+      api.revisions.review(id, rating, mcqResult).then((res) => ({ res, rating, card })),
     onSuccess: async ({ rating, card }) => {
       // Record this card into session history
       const newReviewedItem = {
@@ -114,10 +141,16 @@ export function RevisePage() {
     }
   });
 
-  const handleRate = (rating) => {
+  const handleRate = (rating, mcqResult) => {
     if (!currentCard?.id) return;
-    rateMutation.mutate({ id: currentCard.id, rating, card: currentCard });
+    rateMutation.mutate({ id: currentCard.id, rating, card: currentCard, mcqResult });
   };
+
+  // Reset the per-card quiz state whenever the current card changes.
+  useEffect(() => {
+    setQuizSkipped(false);
+    setShowAnswer(false);
+  }, [currentCard?.id]);
 
   const handleStartAnotherSession = () => {
     startTimeRef.current = Date.now();
@@ -203,6 +236,9 @@ export function RevisePage() {
           completionPercentage={completionPercentage}
           ratingBreakdown={ratingBreakdown}
           reviewedItems={sessionReviewed}
+          // After the current card is reviewed its revision leaves the queue, so the
+          // refetched `items` is exactly the "still due" list for the summary.
+          remainingItems={items.filter((it) => !sessionReviewed.some((r) => (r.id && r.id === it.id) || (r.noteId && r.noteId === it.noteId)))}
           onStartAnotherSession={handleStartAnotherSession}
         />
       </div>
@@ -444,38 +480,52 @@ export function RevisePage() {
               {currentCard.noteTitle || currentCard.title || 'Untitled Problem Note'}
             </h2>
 
-            <div
-              style={{
-                minHeight: '160px',
-                background: theme === 'light' ? '#ffffff' : '#050505',
-                padding: '24px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color)',
-                marginBottom: '24px',
-              }}
-            >
-              {showAnswer ? (
-                <pre
-                  style={{
-                    margin: 0,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.88rem',
-                    color: 'var(--text-primary)',
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {currentCard.contentMarkdown || 'No solution markdown written for this note yet.'}
-                </pre>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', gap: '14px' }}>
-                  <Lock size={32} style={{ color: 'var(--text-secondary)' }} />
-                  <button className="btn-mono-secondary" onClick={() => setShowAnswer(true)}>
-                    Show Solution & Intuition
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Quiz-first flow: the MCQ quiz tests understanding before the solution
+                is revealed. On completion it submits the rating automatically; the
+                student can also skip to the plain reveal-and-rate flow below. */}
+            {!quizSkipped && !showAnswer ? (
+              <div style={{ marginBottom: '24px' }}>
+                <RevisionQuiz
+                  card={currentCard}
+                  submitting={rateMutation.isPending}
+                  onComplete={({ rating, mcqResult }) => handleRate(rating, mcqResult)}
+                  onSkip={() => { setQuizSkipped(true); setShowAnswer(true); }}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  minHeight: '160px',
+                  background: theme === 'light' ? '#ffffff' : '#050505',
+                  padding: '24px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  marginBottom: '24px',
+                }}
+              >
+                {showAnswer ? (
+                  <pre
+                    style={{
+                      margin: 0,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.88rem',
+                      color: 'var(--text-primary)',
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {currentCard.contentMarkdown || 'No solution markdown written for this note yet.'}
+                  </pre>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', gap: '14px' }}>
+                    <Lock size={32} style={{ color: 'var(--text-secondary)' }} />
+                    <button className="btn-mono-secondary" onClick={() => setShowAnswer(true)}>
+                      Show Solution & Intuition
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {showAnswer && (
               <div style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>

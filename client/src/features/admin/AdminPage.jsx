@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AdminUsersPanel } from './components/AdminUsersPanel.jsx';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/apiClient.js';
 import { queryKeys } from '../../lib/queryClient.js';
@@ -16,6 +17,7 @@ import {
   Filter,
   Tag,
   ShieldAlert,
+  Users,
   FileText,
   Layers,
   RotateCcw,
@@ -29,7 +31,7 @@ export function AdminPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState('reports'); // 'reports' | 'tags'
+  const [activeTab, setActiveTab] = useState('reports'); // 'reports' | 'tags' | 'users'
   const [newTagInput, setNewTagInput] = useState('');
   const [tagToDelete, setTagToDelete] = useState(null);
 
@@ -317,8 +319,32 @@ export function AdminPage() {
             <Tag size={16} />
             <span>Tag Taxonomy</span>
           </button>
+          <button
+            type="button"
+            id="tabUsers"
+            onClick={() => setActiveTab('users')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: 'none',
+              background: activeTab === 'users' ? 'var(--color-accent-purple, #8b5cf6)' : 'transparent',
+              color: activeTab === 'users' ? '#ffffff' : 'var(--text-secondary)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Users size={16} />
+            <span>Users</span>
+          </button>
         </div>
       </div>
+
+      {activeTab === 'users' && <AdminUsersPanel />}
 
       {activeTab === 'reports' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -830,7 +856,7 @@ export function AdminPage() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'tags' ? (
         /* Tag Taxonomy Tab */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Add Tag Form */}
@@ -953,7 +979,7 @@ export function AdminPage() {
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Delete Tag Confirmation Dialog */}
       {tagToDelete && (
