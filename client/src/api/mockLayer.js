@@ -80,6 +80,7 @@ export const mockHandlers = {
     ],
     count: 2
   }),
+  'GET /revisions/:id/mcqs': async () => ({ revisionId: 'mock-rev', noteId: 'mock-note', questions: [] }),
   'POST /revisions/:id/review': async (_b, params) => mockRevision({ id: params.id, repetitions: 1, intervalDays: 1 }),
   'GET /revisions/stats': async () => ({ retention7d: 0.82, dueToday: 5, reviewedToday: 3 }),
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Clock, Target, BookOpen, Percent, RotateCcw, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { Trophy, Clock, Target, BookOpen, Percent, RotateCcw, ArrowRight, CheckCircle2, Sparkles, Clock3 } from 'lucide-react';
 import { useTheme } from '../../../lib/themeContext.jsx';
 
 export function formatTimeSpent(totalSeconds) {
@@ -19,6 +19,7 @@ export function RevisionSummaryScreen({
   completionPercentage = 100,
   ratingBreakdown = { 0: 0, 1: 0, 2: 0, 3: 0 },
   reviewedItems = [],
+  remainingItems = [], // notes still due in the queue that the session didn't get to
   onStartAnotherSession,
 }) {
   const { theme } = useTheme();
@@ -256,8 +257,9 @@ export function RevisionSummaryScreen({
       {/* Reviewed Items List (if any) */}
       {reviewedItems.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            Reviewed in this session ({reviewedItems.length})
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Reviewed in this session ({reviewedItems.length})</span>
+            {remainingItems.length > 0 && <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{remainingItems.length} still due</span>}
           </div>
           <div
             style={{
@@ -312,6 +314,55 @@ export function RevisionSummaryScreen({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Remaining problems to review (session ended early) */}
+      {remainingItems.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Still to review ({remainingItems.length})
+          </div>
+          <div
+            style={{
+              maxHeight: '160px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              paddingRight: '4px',
+            }}
+          >
+            {remainingItems.map((item, idx) => (
+              <Link
+                key={`${item.id ?? item.noteId}-${idx}`}
+                // Jump straight into revising this specific note (RevisePage reads ?noteId).
+                to={item.noteId ? `/revise?noteId=${item.noteId}` : '/revise'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  background: theme === 'light' ? '#fef7eb' : '#1a1408',
+                  border: '1px solid rgba(234, 179, 8, 0.3)',
+                  fontSize: '0.84rem',
+                  textDecoration: 'none',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                  <Clock3 size={14} style={{ color: '#eab308', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.noteTitle || item.title || 'Untitled Note'}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#eab308', padding: '2px 8px', borderRadius: '12px', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.4)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  Revise <ArrowRight size={11} />
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       )}

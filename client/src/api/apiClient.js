@@ -90,7 +90,8 @@ export const api = {
   revisions: {
     enroll: (noteId) => call(ENDPOINTS.revisions.enroll, { body: { noteId } }),
     due: (query) => call(ENDPOINTS.revisions.due, { query }),
-    review: (id, rating) => call(ENDPOINTS.revisions.review, { params: { id }, body: { rating } }),
+    review: (id, rating, mcqResult) => call(ENDPOINTS.revisions.review, { params: { id }, body: { rating, ...(mcqResult ? { mcqResult } : {}) } }),
+    mcqs: (id) => call(ENDPOINTS.revisions.mcqs, { params: { id } }),
     stats: () => call(ENDPOINTS.revisions.stats),
   },
 
@@ -155,6 +156,8 @@ export const api = {
     deleteTag: (id) => call(ENDPOINTS.admin.deleteTag, { params: { id } }),
     reports: (query) => call(ENDPOINTS.admin.reports, { query }),
     resolveReport: (id, status) => call(ENDPOINTS.admin.resolveReport, { params: { id }, body: { status } }),
+    listUsers: (query) => call(ENDPOINTS.admin.listUsers, { query }),
+    getUser: (id) => call(ENDPOINTS.admin.getUser, { params: { id } }),
   },
 
   health: {

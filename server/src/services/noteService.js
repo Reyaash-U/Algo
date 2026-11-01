@@ -1,6 +1,14 @@
 import { prisma } from '../config/db.js';
 import { ApiError } from '../utils/apiError.js';
 import { stripDangerous } from '../utils/sanitize.js';
+
+// Short student-authored text: trim, cap length, treat empty as null so a cleared field
+// goes back to "no custom question" instead of an empty-string placeholder.
+function trimmedOrNull(value, max) {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) return null;
+  return stripDangerous(trimmed).slice(0, max);
+}
 import { createSubmission } from './submissionService.js';
 import { enrollNote } from './revisionServiceDb.js';
 
@@ -67,6 +75,8 @@ export async function createNote(userId, data = {}) {
       ...(data.patternTags !== undefined ? { patternTags: data.patternTags } : {}),
       ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
       ...(data.confidence !== undefined ? { confidence: data.confidence } : {}),
+      ...(data.keyInsight !== undefined ? { keyInsight: trimmedOrNull(data.keyInsight, 300) } : {}),
+      ...(data.edgeCase !== undefined ? { edgeCase: trimmedOrNull(data.edgeCase, 300) } : {}),
     },
   });
 
@@ -124,6 +134,8 @@ export async function updateNote(id, data = {}) {
       ...(data.patternTags !== undefined ? { patternTags: data.patternTags } : {}),
       ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
       ...(data.confidence !== undefined ? { confidence: data.confidence } : {}),
+      ...(data.keyInsight !== undefined ? { keyInsight: trimmedOrNull(data.keyInsight, 300) } : {}),
+      ...(data.edgeCase !== undefined ? { edgeCase: trimmedOrNull(data.edgeCase, 300) } : {}),
       ...(data.versions !== undefined ? { versions: data.versions } : versionsPatch),
     },
   });

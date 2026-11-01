@@ -44,6 +44,7 @@ export const ENDPOINTS = Object.freeze({
     enroll: { method: 'POST', path: '/revisions',            auth: 'user' },
     due:    { method: 'GET',  path: '/revisions/due',        auth: 'user' },
     review: { method: 'POST', path: '/revisions/:id/review', auth: 'user' },
+    mcqs:   { method: 'GET',  path: '/revisions/:id/mcqs',   auth: 'user' },
     stats:  { method: 'GET',  path: '/revisions/stats',      auth: 'user' },
   },
 
@@ -97,6 +98,8 @@ export const ENDPOINTS = Object.freeze({
     deleteTag:     { method: 'DELETE', path: '/admin/tags/:id',    auth: 'admin' },
     reports:       { method: 'GET',    path: '/admin/reports',     auth: 'admin' },
     resolveReport: { method: 'PATCH',  path: '/admin/reports/:id', auth: 'admin' },
+    listUsers:     { method: 'GET',    path: '/admin/users',          auth: 'admin' },
+    getUser:       { method: 'GET',    path: '/admin/users/:id',      auth: 'admin' },
   },
 
   // ---- Health ----

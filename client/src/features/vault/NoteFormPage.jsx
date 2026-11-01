@@ -67,6 +67,10 @@ export function NoteFormPage() {
     patternTags: '',
     contentMarkdown: '',
     visibility: 'private',
+    // Student-authored self-quiz fields (optional) — each becomes a problem-specific
+    // MCQ at revision time with distractors drawn from your own other notes.
+    keyInsight: '',
+    edgeCase: '',
     solutions: [
       {
         id: 'sol-1',
@@ -140,6 +144,8 @@ export function NoteFormPage() {
         patternTags: Array.isArray(note.patternTags) ? note.patternTags.join(', ') : '',
         contentMarkdown: note.contentMarkdown || '',
         visibility: note.visibility || 'private',
+        keyInsight: note.keyInsight || '',
+        edgeCase: note.edgeCase || '',
         solutions: loadedSolutions,
       };
 
@@ -175,6 +181,8 @@ export function NoteFormPage() {
       patternTags: tagsArray,
       codeBlocks,
       visibility: data.visibility || 'private',
+      keyInsight: (data.keyInsight || '').trim(),
+      edgeCase: (data.edgeCase || '').trim(),
     };
   }, []);
 
@@ -558,6 +566,41 @@ export function NoteFormPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* ── Self-Quiz Section (optional, powers problem-specific MCQs at revision) ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '18px', border: '1px solid var(--border-color)', borderRadius: '12px', backgroundColor: isLight ? '#f9fafb' : '#0b0b0e' }}>
+          <div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>Self-quiz (optional)</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              One line each. Shown as problem-specific MCQs at revision time, with the wrong options
+              taken from your other notes.
+            </div>
+          </div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Key insight (the trick you want to remember)
+            <input
+              type="text"
+              name="keyInsight"
+              value={formData.keyInsight}
+              onChange={handleChange}
+              maxLength={300}
+              placeholder="e.g. Store each value's index in a hash map; look up (target - num) in O(1)."
+              style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: isLight ? '#fff' : '#050505', color: 'var(--text-primary)', fontSize: '0.9rem' }}
+            />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Edge case / gotcha
+            <input
+              type="text"
+              name="edgeCase"
+              value={formData.edgeCase}
+              onChange={handleChange}
+              maxLength={300}
+              placeholder="e.g. The same index cannot be used twice."
+              style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: isLight ? '#fff' : '#050505', color: 'var(--text-primary)', fontSize: '0.9rem' }}
+            />
+          </label>
         </div>
 
         {/* ── Multiple Code Solutions Section ─────────────────────────────── */}

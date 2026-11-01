@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { verifyJWT } from '../middleware/auth.js';
-import { enroll, due, review, stats } from '../controllers/revisionController.js';
+import { enroll, due, review, stats, mcqs } from '../controllers/revisionController.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // BACKEND DEV: the SM-2 algorithm is ALREADY DONE and tested in
@@ -16,6 +16,7 @@ router.use(verifyJWT);
 router.post('/', enroll);
 router.get('/due', due);
 router.post('/:id/review', review);
+router.get('/:id/mcqs', mcqs);
 router.get('/stats', stats);
 
 export default router;

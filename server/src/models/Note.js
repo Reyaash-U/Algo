@@ -12,6 +12,8 @@ export function toNoteDTO(row) {
     patternTags: row.patternTags,
     visibility: row.visibility,
     confidence: row.confidence,
+    keyInsight: row.keyInsight ?? null,
+    edgeCase: row.edgeCase ?? null,
     forkOf: row.forkOfId,
     forkCount: row.forkCount,
     createdAt: row.createdAt.toISOString(),

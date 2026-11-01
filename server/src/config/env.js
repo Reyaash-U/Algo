@@ -43,6 +43,10 @@ export const env = {
   SMTP_USER: process.env.SMTP_USER ?? '',
   SMTP_PASS: process.env.SMTP_PASS ?? '',
   SMTP_PORT: parseInt(process.env.SMTP_PORT ?? '587', 10),
+
+  // Google Gemini API key for AI-generated MCQs (optional). Without it, the quiz
+  // falls back to templated + student-authored questions only.
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
   SMTP_SECURE: process.env.SMTP_SECURE === 'true', // true for port 465
 
   // Public URL of the web app, used for links inside emails.
