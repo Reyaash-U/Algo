@@ -346,41 +346,98 @@
   text-decoration: underline;
 }
 
-/* Mobile Responsiveness */
+/* Mobile Responsiveness: replace the two-pane sliding layout with a plain
+   stacked card. The container becomes a normal flow element, only the active
+   form is rendered, the sliding overlay is hidden, and the inner forms sit as
+   simple vertical blocks with no absolute positioning or transforms. */
 @media (max-width: 768px) {
-  .av-slider-container {
-    min-height: auto;
-    width: 100%;
-    max-width: 440px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .av-overlay-container {
-    display: none;
-  }
-
-  .av-form-container {
-    position: relative;
-    width: 100%;
-    height: auto;
-    opacity: 1;
-    z-index: 1;
+  /* Belt-and-braces: anything inside the slider that has an absolute position
+     from the desktop layout gets flattened. Covers both the un-prefixed classes
+     (.form-container, .sign-in-container, .sign-up-container, .container) that
+     the markup still carries and the av-prefixed ones. */
+  .av-slider-container.container,
+  .av-slider-container .form-container,
+  .av-slider-container .sign-in-container,
+  .av-slider-container .sign-up-container,
+  .av-slider-container .overlay-container,
+  .av-slider-container .overlay,
+  .av-slider-container .overlay-panel {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
     transform: none !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
     animation: none !important;
+    transition: none !important;
+  }
+  .av-slider-container .overlay-container,
+  .av-slider-container .overlay,
+  .av-slider-container .overlay-panel {
+    display: none !important;
   }
 
+  .av-slider-auth-wrapper {
+    padding: 20px 12px;
+  }
+
+  .av-slider-container {
+    min-height: auto !important;
+    width: 100% !important;
+    /* Never exceed the viewport; a desktop 840 or an inherited 440 both overflow a 393-wide phone. */
+    max-width: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    box-sizing: border-box;
+    margin: 0 auto;
+  }
+
+  /* The sliding overlay panel is a desktop-only decoration. */
+  .av-overlay-container,
+  .av-overlay,
+  .av-overlay-panel {
+    display: none !important;
+  }
+
+  /* Flatten the forms: static flow, full width, no transform / transition. */
+  .av-form-container,
   .av-sign-in-container,
   .av-sign-up-container {
-    width: 100%;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    opacity: 1 !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    z-index: auto !important;
   }
 
+  /* Only one form is shown at a time, controlled by the same right-panel-active
+     class the desktop slider uses — no JSX changes needed. */
   .av-slider-container.right-panel-active .av-sign-in-container {
-    display: none;
+    display: none !important;
+  }
+  .av-slider-container:not(.right-panel-active) .av-sign-up-container {
+    display: none !important;
   }
 
-  .av-slider-container:not(.right-panel-active) .av-sign-up-container {
-    display: none;
+  /* Tighter form padding and typography on small screens. */
+  .av-slider-form {
+    padding: 24px 20px !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  .av-slider-title {
+    font-size: 1.35rem;
   }
 
   .av-mobile-toggle-btn {
