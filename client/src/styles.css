@@ -578,3 +578,179 @@ html.av-theme-dark body, html.av-theme-light body {
 
 
 
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Mobile responsiveness
+ *
+ * Most of AlgoVault's pages lay out with `display: grid` + `minmax(...)` and
+ * `flex-wrap: wrap`, so they already stack on narrow screens. These rules fix
+ * the things that don't: the gutters eat too much phone width, horizontal tab
+ * bars overflow, modals touch the edges, big tables stop fitting, and a few
+ * inline-styled forms force a card wider than the screen.
+ *
+ * Breakpoints:
+ *   ≤ 768px  — tablet portrait / large phones
+ *   ≤ 480px  — small phones
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Tighter page gutters so cards get the full phone width */
+  .av-main {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    padding-top: 0.75rem;
+    padding-bottom: 1.5rem;
+  }
+
+  /* Any card: smaller padding, no horizontal overflow */
+  .mono-card {
+    padding: 16px !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Horizontal tab bars (Dashboard: Codeforces/LeetCode/CodeChef/Overview/Settings,
+     and the Admin tab bar) must scroll instead of wrapping or overflowing. */
+  .av-dashboard-page > div[style*="borderBottom"][style*="paddingBottom"],
+  .av-admin-page > div[style*="borderBottom"][style*="paddingBottom"] {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .av-dashboard-page > div[style*="borderBottom"][style*="paddingBottom"] > button,
+  .av-admin-page > div[style*="borderBottom"][style*="paddingBottom"] > button {
+    flex-shrink: 0;
+  }
+
+  /* Note editor and sheet editor forms should fill the width, not sit as a
+     narrow column on the left. */
+  .av-note-form,
+  .av-sheet-detail,
+  .av-settings-page {
+    max-width: 100% !important;
+  }
+  .av-note-form form,
+  form.mono-card {
+    padding: 16px !important;
+  }
+
+  /* Modals (fork from GitHub, user detail, Codeforces connect) must not touch
+     the edges and must stay within the viewport. */
+  div[style*="position: fixed"][style*="inset: 0"] > div.mono-card,
+  div[style*="position: fixed"][style*="zIndex"] > div.mono-card {
+    max-width: calc(100vw - 24px) !important;
+    width: 100%;
+    margin: 12px auto;
+  }
+
+  /* The admin Users table uses a fixed 6-column grid that doesn't fit a phone.
+     Make the whole table scroll horizontally with a min width that keeps the
+     columns legible. */
+  .av-admin-page .mono-card > div[style*="grid-template-columns"],
+  .av-admin-page .mono-card > button[style*="grid-template-columns"] {
+    min-width: 720px;
+  }
+  .av-admin-page .mono-card:has(> div[style*="grid-template-columns"]) {
+    overflow-x: auto;
+  }
+
+  /* Headings and large stat numbers wrap instead of overflowing. */
+  .text-mono-title {
+    font-size: 1.4rem !important;
+    line-height: 1.25;
+    word-wrap: break-word;
+  }
+
+  /* Grids that still look crowded on tablet portrait → force a single column. */
+  div[style*="grid-template-columns: repeat(auto-fit, minmax(300px"],
+  div[style*="grid-template-columns: repeat(auto-fit, minmax(320px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Buttons that were sitting beside form inputs should wrap underneath. */
+  form[style*="flex-wrap"] button[type="submit"],
+  div[style*="flex-wrap"] button {
+    flex-shrink: 0;
+  }
+
+  /* The revision quiz option buttons already stack vertically. Just make the
+     progress bar take the full width and the explanation wrap. */
+  .av-revise-page .mono-card {
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Even tighter page gutters on small phones; keep a tiny breathing margin. */
+  .av-main {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Headings shrink further, body text stays legible. */
+  h1.text-mono-title {
+    font-size: 1.25rem !important;
+  }
+  h2.text-mono-title {
+    font-size: 1.1rem !important;
+  }
+
+  /* Any 2+ column grid still in the layout → force one column. Covers
+     "repeat(auto-fit, minmax(260px..))", "minmax(220px..)" etc. that are too
+     wide for a 360px screen. */
+  div[style*="grid-template-columns: repeat(auto-fit, minmax(260px"],
+  div[style*="grid-template-columns: repeat(auto-fit, minmax(280px"],
+  div[style*="grid-template-columns: repeat(auto-fill, minmax(260px"],
+  div[style*="grid-template-columns: repeat(auto-fill, minmax(280px"],
+  div[style*="grid-template-columns: repeat(auto-fill, minmax(320px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* The revision "Again / Hard / Good / Easy" row was a 4-column grid; let the
+     labels wrap to two rows on tiny screens. */
+  div[style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Compact button padding so touch targets still fit side by side. */
+  .btn-mono-primary,
+  .btn-mono-secondary {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Modals get a 12px gutter on every side. */
+  div[style*="position: fixed"][style*="inset: 0"] > div.mono-card {
+    padding: 16px !important;
+  }
+}
+
+/* Prevent any accidental horizontal scrolling at the page level — a single
+   runaway element shouldn't push the whole app off the right edge. */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Navbar on small screens: shrink the pill container, hide the branding wordmark,
+   compress the Sign In / Sign Up buttons so they fit beside the hamburger. */
+@media (max-width: 640px) {
+  nav.max-w-7xl {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    gap: 6px;
+  }
+  nav.max-w-7xl > a:first-child span:last-child {
+    display: none; /* "AlgoVault" wordmark */
+  }
+  nav.max-w-7xl .px-4.py-2 {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 0.78rem !important;
+  }
+  nav.max-w-7xl .px-4 {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
